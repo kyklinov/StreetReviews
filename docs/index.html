@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- CarX Street · дэшборд отзывов Steam · версия 1.4 (2026-10-02) — фильтр по языку -->
+<!-- CarX Street · дэшборд отзывов Steam · версия 1.5 (2026-10-02) — фильтр по периоду -->
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
@@ -85,6 +85,32 @@
   .filter-bar b { font-weight: 600; }
   .filter-bar button { margin-left: auto; border: 1px solid var(--accent); background: var(--surface); color: var(--accent);
     border-radius: 6px; padding: 4px 12px; cursor: pointer; font: inherit; }
+  .cards-note { margin: -8px 0 16px; font-size: 12px; color: var(--text-muted); }
+  .mini-sub { font-size: 12px; font-weight: 400; color: var(--text-muted); }
+  #periodPanel { padding-block: 14px; }
+  .period-row { display: flex; align-items: center; gap: 10px 14px; flex-wrap: wrap; }
+  .period-row h2 { margin: 0 6px 0 0; }
+  .period-field { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-muted); }
+  .period-field input { width: 120px; font: inherit; font-size: 14px; color: var(--text); background: var(--surface);
+    border: 1px solid var(--border); border-radius: 7px; padding: 7px 10px; font-variant-numeric: tabular-nums; }
+  .period-field input:focus { outline: 2px solid var(--accent); outline-offset: 0; border-color: var(--accent); }
+  .period-field input.bad { border-color: var(--neg); background: var(--neg-soft); }
+  .btn-primary, .btn-ghost { font: inherit; font-size: 13px; border-radius: 7px; padding: 7px 14px; cursor: pointer; border: 1px solid var(--accent); }
+  .btn-primary { background: var(--accent); color: var(--surface); }
+  .btn-ghost { background: var(--surface); color: var(--accent); }
+  .btn-ghost:disabled { opacity: .45; cursor: default; }
+  .btn-primary:focus-visible, .btn-ghost:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .period-msg { margin: 10px 0 0; font-size: 13px; }
+  .period-msg.err { color: var(--neg); }
+  .period-msg.info { color: var(--text-muted); }
+  .filter-bar .chip { display: inline-flex; align-items: center; gap: 4px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 2px 4px 2px 10px; }
+  .filter-bar .chip button { margin: 0; border: 0; background: none; color: var(--text-muted); font-size: 15px; line-height: 1; padding: 2px 6px; cursor: pointer; border-radius: 10px; }
+  .filter-bar .chip button:hover { color: var(--neg); background: var(--neg-soft); }
+  .filter-bar .muted { color: var(--text-muted); }
+  @media (max-width: 560px) { .period-field input { width: 108px; } .period-row h2 { width: 100%; } }
+  .card { min-width: 0; }
+  .card .label { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 0; }
   .card .scope { font-size: 11px; color: var(--accent); background: var(--accent-soft); border-radius: 8px; padding: 0 6px; margin-left: 6px; }
 
   /* облако */
@@ -169,30 +195,43 @@
 <main id="app">
   <div class="filter-bar" id="filterBar" hidden></div>
   <div class="cards" id="statCards"></div>
+  <p class="cards-note" id="cardsNote" hidden>За выбранный период цифры посчитаны по загруженным отзывам и могут немного отличаться от сводки Steam.</p>
+
+  <div class="panel" id="periodPanel">
+    <div class="period-row">
+      <h2>Период</h2>
+      <label class="period-field"><span>с</span><input id="dateFrom" type="text" inputmode="numeric" placeholder="дд.мм.гггг" maxlength="10" autocomplete="off" aria-label="Дата начала периода"></label>
+      <label class="period-field"><span>по</span><input id="dateTo" type="text" inputmode="numeric" placeholder="дд.мм.гггг" maxlength="10" autocomplete="off" aria-label="Дата конца периода"></label>
+      <button type="button" class="btn-primary" id="periodApply">Показать</button>
+      <button type="button" class="btn-ghost" id="periodReset" disabled>Сбросить даты</button>
+    </div>
+    <p class="period-msg" id="periodMsg" hidden></p>
+    <p class="note" id="periodRange" style="margin:8px 0 0"></p>
+  </div>
 
   <div class="grid-2">
     <div class="panel">
-      <h2>Новые отзывы по дням <span class="sub">последние 7 дней, МСК</span></h2>
+      <h2 id="weekTitle">Новые отзывы по дням <span class="sub">последние 7 дней, МСК</span></h2>
       <div class="mini-cards" id="weekCards"></div>
       <div class="legend"><span style="--c:var(--pos)">Положительные</span><span style="--c:var(--neg)">Отрицательные</span></div>
       <div class="chart-box" style="height:200px"><canvas id="weekChart" aria-label="Отзывы за 7 дней"></canvas></div>
     </div>
     <div class="panel">
-      <h2>Рейтинг по языкам <span class="sub">доля положительных, от большей к меньшей · нажмите на язык, чтобы отфильтровать дэшборд</span></h2>
+      <h2>Рейтинг по языкам <span class="sub" id="langSub">доля положительных, от большей к меньшей · нажмите на язык, чтобы отфильтровать дэшборд</span></h2>
       <div id="langBars"></div>
     </div>
   </div>
 
   <div class="panel">
-    <h2>Тренд за 30 дней <span class="sub">новые отзывы по дням, МСК</span></h2>
+    <h2 id="monthTitle">Тренд за 30 дней <span class="sub">новые отзывы по дням, МСК</span></h2>
     <div class="mini-cards" id="monthCards"></div>
-    <div class="legend"><span style="--c:var(--pos)">Положительные</span><span style="--c:var(--neg)">Отрицательные</span></div>
+    <div class="legend" id="monthLegend"><span style="--c:var(--pos)">Положительные</span><span style="--c:var(--neg)">Отрицательные</span></div>
     <div class="chart-box"><canvas id="monthChart" aria-label="Отзывы за 30 дней"></canvas></div>
   </div>
 
   <div class="panel">
     <div class="panel-head">
-      <h2>О чём пишут <span class="sub">темы и число отзывов, где они упоминаются</span></h2>
+      <h2>О чём пишут <span class="sub" id="tagSub">темы и число отзывов, где они упоминаются</span></h2>
       <div class="seg" id="tagPeriod"><button data-p="all" class="on">За всё время</button><button data-p="d30">30 дней</button></div>
     </div>
     <p class="note">Темы идут от самых упоминаемых к менее упоминаемым. Один отзыв засчитывается в тему один раз. Тема в положительном отзыве — это не всегда похвала (например, «отличная игра, но оптимизация хромает»), поэтому смотрите на долю упоминаний в отрицательных отзывах в таблице ниже.</p>
@@ -216,17 +255,17 @@
   </div>
 
   <div class="panel top-review">
-    <h2>Самый полезный отзыв <span class="sub">больше всего отметок «Полезно» за всё время</span></h2>
+    <h2>Самый полезный отзыв <span class="sub" id="topSub">больше всего отметок «Полезно» за всё время</span></h2>
     <div id="topReview"></div>
   </div>
 
   <div class="grid-2e">
     <div class="panel">
-      <h2>10 последних положительных <span class="sub">с машинным переводом на русский</span></h2>
+      <h2><span id="posTitle">10 последних положительных</span> <span class="sub">с машинным переводом на русский</span></h2>
       <div id="recentPos"></div>
     </div>
     <div class="panel">
-      <h2>10 последних отрицательных <span class="sub">с машинным переводом на русский</span></h2>
+      <h2><span id="negTitle">10 последних отрицательных</span> <span class="sub">с машинным переводом на русский</span></h2>
       <div id="recentNeg"></div>
     </div>
   </div>
@@ -235,7 +274,7 @@
 <footer id="footer"></footer>
 
 <script>
-/* CarX Street · дэшборд отзывов · версия 1.4 */
+/* CarX Street · дэшборд отзывов · версия 1.5 */
 const fmt = n => (n ?? 0).toLocaleString('ru-RU');
 const pctTxt = v => v == null ? '—' : v.toFixed(1).replace('.', ',') + '%';
 const pct = (p, n) => (p + n) ? 100 * p / (p + n) : null;
@@ -258,17 +297,6 @@ function card(label, value, delta, dot) {
 }
 function mini(label, value) { return `<div class="mini"><div class="label">${label}</div><div class="value">${value}</div></div>`; }
 
-function renderCards(d, langName) {
-  const s = d.summary, f = d.free;
-  const sc = langName ? `<span class="scope">только ${esc(langName.toLowerCase())}</span>` : '';
-  document.getElementById('statCards').innerHTML =
-    card('Всего отзывов' + sc, fmt(s.total), `${s.score_desc} · ${pctTxt(s.pct)} положительных`) +
-    card('Положительные' + sc, fmt(s.positive), pctTxt(pct(s.positive, s.negative)) + ' от всех', 'var(--pos)') +
-    card('Отрицательные' + sc, fmt(s.negative), pctTxt(pct(s.negative, s.positive)) + ' от всех', 'var(--neg)') +
-    card('Получили игру бесплатно' + sc, fmt(f.total),
-      `<span style="color:var(--pos)">${fmt(f.positive)} положит.</span> · <span style="color:var(--neg)">${fmt(f.negative)} отрицат.</span>`);
-}
-
 const charts = {};
 function stackedChart(id, rows) {
   const grid = css('--grid'), muted = css('--text-muted');
@@ -276,7 +304,7 @@ function stackedChart(id, rows) {
   return charts[id] = new Chart(document.getElementById(id), {
     type: 'bar',
     data: {
-      labels: rows.map(r => dayLabel(r.date)),
+      labels: rows.map(r => r.label || dayLabel(r.date)),
       datasets: [
         { label: 'Положительные', data: rows.map(r => r.pos), backgroundColor: css('--pos'), borderRadius: 4, borderSkipped: false, borderWidth: { top: 2 }, borderColor: css('--surface'), maxBarThickness: 34 },
         { label: 'Отрицательные', data: rows.map(r => r.neg), backgroundColor: css('--neg'), borderRadius: 4, borderSkipped: false, borderWidth: { top: 2 }, borderColor: css('--surface'), maxBarThickness: 34 },
@@ -288,6 +316,7 @@ function stackedChart(id, rows) {
       plugins: {
         legend: { display: false },
         tooltip: { callbacks: {
+          title: items => rows[items[0].dataIndex].title || items[0].label,
           footer: items => { const p = items[0]?.parsed.y || 0, n = items[1]?.parsed.y || 0; const t = p + n;
             return t ? `Всего: ${t} · положит. ${Math.round(100*p/t)}%` : 'Нет отзывов'; } } }
       },
@@ -299,7 +328,35 @@ function stackedChart(id, rows) {
   });
 }
 
+/* ---------- Динамика (графики) ---------- */
+function lineChart(id, rows) {
+  const grid = css('--grid'), muted = css('--text-muted');
+  if (charts[id]) { charts[id].destroy(); delete charts[id]; }
+  return charts[id] = new Chart(document.getElementById(id), {
+    type: 'line',
+    data: {
+      labels: rows.map(r => r.label),
+      datasets: [{ label: 'Доля положительных', data: rows.map(r => (r.pos + r.neg) ? Math.round(1000 * r.pos / (r.pos + r.neg)) / 10 : null),
+        borderColor: css('--pos'), backgroundColor: css('--pos'), borderWidth: 2, pointRadius: rows.length > 40 ? 0 : 3, pointHoverRadius: 5, tension: 0.25, spanGaps: true }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: { legend: { display: false }, tooltip: { callbacks: {
+        title: items => rows[items[0].dataIndex].title || items[0].label,
+        label: item => { const r = rows[item.dataIndex]; return ` ${String(item.parsed.y).replace('.', ',')}% положительных`; },
+        footer: items => { const r = rows[items[0].dataIndex]; return `Отзывов: ${r.pos + r.neg} (${r.pos} / ${r.neg})`; } } } },
+      scales: {
+        x: { grid: { display: false }, ticks: { color: muted, maxRotation: 0, autoSkipPadding: 8, font: { size: 11 } } },
+        y: { min: 0, max: 100, grid: { color: grid }, border: { display: false }, ticks: { color: muted, stepSize: 25, callback: v => v + '%', font: { size: 11 } } }
+      }
+    }
+  });
+}
+
 function renderPeriods(d) {
+  if (d.period) return renderPeriodCharts(d);
+  setPanelTitles(false);
   const all = d.daily30 || [];
   const week = all.slice(-7);
   const sum = rows => rows.reduce((a, r) => ({ pos: a.pos + r.pos, neg: a.neg + r.neg }), { pos: 0, neg: 0 });
@@ -310,36 +367,76 @@ function renderPeriods(d) {
     mini('В среднем в день', ((w.pos + w.neg) / 7).toFixed(1).replace('.', ',')) +
     mini('Сегодня (неполный день)', fmt(today.pos + today.neg));
   document.getElementById('monthCards').innerHTML =
-    mini('Отзывов за 30 дней', `${fmt(m.pos + m.neg)} <span style="font-size:12px;font-weight:400;color:var(--text-muted)">(${fmt(m.pos)} / ${fmt(m.neg)})</span>`) +
+    mini('Отзывов за 30 дней', `${fmt(m.pos + m.neg)} <span class="mini-sub">(${fmt(m.pos)} / ${fmt(m.neg)})</span>`) +
     mini('Положительных за 30 дней', pctTxt(pct(m.pos, m.neg))) +
     mini('Положительных за всё время', pctTxt(d.summary?.pct));
-  stackedChart('weekChart', week);
-  stackedChart('monthChart', all);
+  stackedChart('weekChart', week.map(r => ({ ...r, label: dayLabel(r.date) })));
+  stackedChart('monthChart', all.map(r => ({ ...r, label: dayLabel(r.date) })));
+}
+
+function renderPeriodCharts(d) {
+  const p = d.period, buckets = d.series;
+  setPanelTitles(true, p.weekly);
+  const tot = buckets.reduce((a, r) => ({ pos: a.pos + r.pos, neg: a.neg + r.neg }), { pos: 0, neg: 0 });
+  document.getElementById('weekCards').innerHTML =
+    mini('За период', fmt(tot.pos + tot.neg)) +
+    mini('В среднем в день', ((tot.pos + tot.neg) / p.days).toFixed(1).replace('.', ',')) +
+    mini('Дней в периоде', fmt(p.days));
+  document.getElementById('monthCards').innerHTML =
+    mini('Отзывов за период', `${fmt(tot.pos + tot.neg)} <span class="mini-sub">(${fmt(tot.pos)} / ${fmt(tot.neg)})</span>`) +
+    mini('Положительных за период', pctTxt(pct(tot.pos, tot.neg))) +
+    mini('Положительных за всё время', pctTxt(sliceOf(currentLang).summary?.pct));
+  stackedChart('weekChart', buckets);
+  lineChart('monthChart', buckets);
+}
+
+function setPanelTitles(period, weekly) {
+  const unit = weekly ? 'неделям' : 'дням';
+  document.getElementById('weekTitle').innerHTML = period
+    ? `Отзывы за период по ${unit} <span class="sub">${esc(periodText(currentPeriod))}, МСК</span>`
+    : 'Новые отзывы по дням <span class="sub">последние 7 дней, МСК</span>';
+  document.getElementById('monthTitle').innerHTML = period
+    ? `Доля положительных за период <span class="sub">по ${unit}, МСК</span>`
+    : 'Тренд за 30 дней <span class="sub">новые отзывы по дням, МСК</span>';
+  document.getElementById('monthLegend').hidden = !!period;
+  document.getElementById('tagPeriod').hidden = !!period;
+  document.getElementById('tagSub').textContent = period ? 'за выбранный период' : 'темы и число отзывов, где они упоминаются';
+  document.getElementById('topSub').textContent = period ? 'больше всего отметок «Полезно» среди отзывов за период' : 'больше всего отметок «Полезно» за всё время';
+  document.getElementById('posTitle').textContent = period ? '10 последних положительных за период' : '10 последних положительных';
+  document.getElementById('negTitle').textContent = period ? '10 последних отрицательных за период' : '10 последних отрицательных';
+  document.getElementById('langSub').textContent = period
+    ? 'за выбранный период, по загруженным отзывам · нажмите на язык, чтобы отфильтровать дэшборд'
+    : 'доля положительных, от большей к меньшей · нажмите на язык, чтобы отфильтровать дэшборд';
 }
 
 function renderLangs(d) {
   const canFilter = !!d.by_language;
+  const ps = d.period_langs;   // при выбранном периоде: { code: {positive, negative, total} }
   const row = (name, l, cls = '', code = '') => {
     const p = l.pct ?? pct(l.positive, l.negative);
     const tag = code && canFilter && d.by_language[code] ? 'button' : 'div';
     const sel = code && code === currentLang ? ' sel' : '';
     return `<${tag} class="bar-row ${cls}${sel}" ${tag === 'button' ? `type="button" data-lang="${esc(code)}" aria-pressed="${sel ? 'true' : 'false'}"` : ''}
-      title="${esc(name)}: ${fmt(l.positive)} положит. / ${fmt(l.negative)} отрицат. · ${esc(l.score_desc || '')}">
+      title="${esc(name)}: ${fmt(l.positive)} положит. / ${fmt(l.negative)} отрицат.${l.score_desc ? ' · ' + esc(l.score_desc) : ''}">
       <span class="bar-label">${esc(name)}</span>
       <span class="bar-track"><span class="bar-fill" style="width:${p ?? 0}%"></span></span>
       <span class="bar-value">${p == null ? '—' : Math.round(p) + '%'}</span>
       <span class="bar-count">${fmt(l.total)}</span></${tag}>`;
   };
-  let html = d.languages.filter(l => l.total > 0)
+  const list = d.languages.map(l => ps ? { ...l, ...(ps[l.code] || { positive: 0, negative: 0, total: 0 }), pct: null, score_desc: '' } : l)
+    .map(l => ({ ...l, pct: l.pct ?? pct(l.positive, l.negative) }));
+  let html = list.filter(l => l.total > 0 || l.code === currentLang)
     .sort((a, b) => (b.pct ?? -1) - (a.pct ?? -1) || b.total - a.total)
     .map(l => row(l.name, l, '', l.code)).join('');
-  if (d.languages_other && d.languages_other.total) html += row('Прочие языки', d.languages_other, 'other');
+  const other = ps ? ps.__other : d.languages_other;
+  if (other && other.total) html += row('Прочие языки', other, 'other');
+  if (ps && !html) html = '<div class="empty-note">За выбранный период отзывов нет</div>';
   html += `<p class="note" style="margin:10px 0 0">Зелёная часть полосы — положительные, оранжевая — отрицательные. Справа — число отзывов.</p>`;
   const box = document.getElementById('langBars');
   box.innerHTML = html;
   box.classList.toggle('filtered', !!currentLang);
   box.querySelectorAll('button.bar-row').forEach(b => b.addEventListener('click', () => {
-    setLang(b.dataset.lang === currentLang ? null : b.dataset.lang);
+    applyFilters(b.dataset.lang === currentLang ? null : b.dataset.lang, currentPeriod);
   }));
 }
 
@@ -355,7 +452,8 @@ function renderCloud(el, items, key) {
     `<span class="w" style="font-size:${scale(t[key]).toFixed(1)}px" title="${esc(t.name)}: ${fmt(t[key])} отзывов">${esc(t.name)}<sup>${fmt(t[key])}</sup></span>`).join('');
 }
 function renderTags(d) {
-  const items = (d.tags[tagPeriod] || []).map(t => ({ ...t, total: t.pos + t.neg, share: (t.pos + t.neg) ? 100 * t.neg / (t.pos + t.neg) : 0 }));
+  const src = d.period ? d.tags.all : (d.tags[tagPeriod] || []);
+  const items = src.map(t => ({ ...t, total: t.pos + t.neg, share: (t.pos + t.neg) ? 100 * t.neg / (t.pos + t.neg) : 0 }));
   renderCloud(document.getElementById('cloudPos'), items, 'pos');
   renderCloud(document.getElementById('cloudNeg'), items, 'neg');
   const rows = items.filter(t => t.total > 0).sort((a, b) => {
@@ -364,7 +462,8 @@ function renderTags(d) {
   });
   document.querySelector('#tagTable tbody').innerHTML = rows.map(t => `<tr>
     <td>${esc(t.name)}</td><td class="num">${fmt(t.pos)}</td><td class="num">${fmt(t.neg)}</td><td class="num">${fmt(t.total)}</td>
-    <td><div class="share"><div class="t"><div class="f" style="width:${t.share.toFixed(1)}%"></div></div><div class="v">${Math.round(t.share)}%</div></div></td></tr>`).join('');
+    <td><div class="share"><div class="t"><div class="f" style="width:${t.share.toFixed(1)}%"></div></div><div class="v">${Math.round(t.share)}%</div></div></td></tr>`).join('')
+    || '<tr><td colspan="5" class="empty-note">Нет упоминаний</td></tr>';
   document.querySelectorAll('#tagTable th').forEach(th => {
     const a = th.querySelector('.arr'); if (a) a.remove();
     if (th.dataset.k === sortKey) th.insertAdjacentHTML('beforeend', ` <span class="arr">${sortDir < 0 ? '▼' : '▲'}</span>`);
@@ -372,7 +471,7 @@ function renderTags(d) {
 }
 
 function reviewHtml(r, big) {
-  if (!r) return '<div class="empty-note">Нет данных</div>';
+  if (!r) return '<div class="empty-note">Нет отзывов</div>';
   const c = r.positive ? 'var(--pos)' : 'var(--neg)';
   return `<div class="review" style="--c:${c}">
     <div class="meta"><span class="verdict">${r.positive ? 'Рекомендует' : 'Не рекомендует'}</span>
@@ -397,11 +496,17 @@ function wireReviews(root) {
   });
 }
 
-/* Перевод на лету для отзывов без готового перевода (срезы по языкам) */
+/* Перевод на лету для отзывов без готового перевода */
 const GL = { english:'en', german:'de', french:'fr', spanish:'es', latam:'es', portuguese:'pt', brazilian:'pt', polish:'pl',
   turkish:'tr', italian:'it', schinese:'zh-CN', tchinese:'zh-TW', japanese:'ja', koreana:'ko', ukrainian:'uk', czech:'cs',
   dutch:'nl', danish:'da', finnish:'fi', norwegian:'no', swedish:'sv', hungarian:'hu', romanian:'ro', thai:'th',
   vietnamese:'vi', greek:'el', bulgarian:'bg', indonesian:'id', arabic:'ar' };
+const LANG_RU = { english:'Английский', russian:'Русский', french:'Французский', german:'Немецкий', japanese:'Японский',
+  spanish:'Испанский (Испания)', latam:'Испанский (Лат. Америка)', portuguese:'Португальский', brazilian:'Португальский (Бразилия)',
+  turkish:'Турецкий', tchinese:'Китайский (трад.)', schinese:'Китайский (упр.)', italian:'Итальянский', koreana:'Корейский',
+  polish:'Польский', ukrainian:'Украинский', czech:'Чешский', dutch:'Нидерландский', danish:'Датский', finnish:'Финский',
+  norwegian:'Норвежский', swedish:'Шведский', hungarian:'Венгерский', romanian:'Румынский', thai:'Тайский',
+  vietnamese:'Вьетнамский', greek:'Греческий', bulgarian:'Болгарский', indonesian:'Индонезийский', arabic:'Арабский' };
 const trCache = new Map();
 async function translateRu(text, lang) {
   const key = lang + '|' + text;
@@ -453,55 +558,265 @@ function renderMeta(d) {
     <p>Источник: открытое API отзывов Steam (<code>appreviews/${d.app?.id}</code>). Учитываются все отзывы — купившие в Steam, активировавшие ключ и получившие игру бесплатно, поэтому общее число может немного отличаться от цифры на странице магазина (там по умолчанию показаны только покупки в Steam).
     Рейтинг по языкам — по сводке Steam для каждого языка, на который локализована страница; остальные языки собраны в строку «Прочие языки».
     При выборе языка все блоки пересчитываются только по отзывам, написанным на этом языке (это язык отзыва, а не страна игрока).
+    При выборе периода все цифры считаются по загруженным отзывам за эти даты (по московскому времени), поэтому могут немного расходиться со сводкой Steam.
     Темы определяются по словарю ключевых слов на ${d.languages?.length || ''}+ языках (файл <code>scripts/tags.json</code>, его можно дополнять).
     Загружено ${fmt(d.fetched?.count)} текстов отзывов (${pctTxt(d.fetched?.coverage)} от общего числа) — по ним считаются темы, динамика и бесплатные копии.</p>
-    <p>Дэшборд v1.4 · сборщик v${esc(d.version)}</p>`;
+    <p>Дэшборд v1.5 · сборщик v${esc(d.version)}</p>`;
 }
 
-/* Фильтр по языку */
-let DATA = null, currentLang = null;
+/* ---------- Период ---------- */
+const MSK = 3 * 3600;
+const isoOf = ts => new Date((ts + MSK) * 1000).toISOString().slice(0, 10);          // дата по МСК
+const tsOfIso = iso => Date.parse(iso + 'T00:00:00Z') / 1000 - MSK;                   // полночь МСК
+const ruDate = iso => iso ? iso.slice(8, 10) + '.' + iso.slice(5, 7) + '.' + iso.slice(0, 4) : '';
+function periodText(p) {
+  if (!p) return '';
+  if (p.from && p.to) return `${ruDate(p.from)} – ${ruDate(p.to)}`;
+  if (p.from) return `с ${ruDate(p.from)}`;
+  return `по ${ruDate(p.to)}`;
+}
+function parseRuDate(s) {
+  s = (s || '').trim();
+  if (!s) return { empty: true };
+  const m = s.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+  if (!m) return { error: 'Введите дату в формате дд.мм.гггг' };
+  const [_, dd, mm, yy] = m, iso = `${yy}-${mm}-${dd}`;
+  const dt = new Date(iso + 'T00:00:00Z');
+  if (isNaN(dt) || dt.toISOString().slice(0, 10) !== iso) return { error: `Такой даты нет: ${s}` };
+  return { iso };
+}
+function scoreDesc(p, n) {
+  const t = p + n; if (!t) return 'Нет отзывов';
+  if (t < 10) return `Мало отзывов (${t})`;
+  const r = p / t;
+  if (r >= 0.95 && t >= 500) return 'Крайне положительные';
+  if (r >= 0.8) return t >= 50 ? 'Очень положительные' : 'Положительные';
+  if (r >= 0.7) return 'В основном положительные';
+  if (r >= 0.4) return 'Смешанные';
+  if (r >= 0.2) return 'В основном отрицательные';
+  if (t >= 500) return 'Крайне отрицательные';
+  return t >= 50 ? 'Очень отрицательные' : 'Отрицательные';
+}
+
+/* Данные по каждому отзыву грузятся только при выборе периода */
+let IDX = null; const TXT = new Map();
+async function loadIndex() {
+  if (IDX) return IDX;
+  const r = await fetch('reviews/index.json?v=' + (DATA.generated_at || ''));
+  if (!r.ok) throw new Error('reviews/index.json: HTTP ' + r.status);
+  return IDX = await r.json();
+}
+async function loadTexts(months) {
+  await Promise.all([...new Set(months)].filter(m => !TXT.has(m)).map(async m => {
+    try { const r = await fetch(`reviews/text-${m}.json?v=` + (DATA.generated_at || '')); TXT.set(m, r.ok ? await r.json() : {}); }
+    catch (e) { TXT.set(m, {}); }
+  }));
+}
+const F = { id: 0, ts: 1, up: 2, lang: 3, free: 4, vu: 5, vf: 6, tags: 7, txt: 8 };
+
+async function computePeriodSlice(lang, p) {
+  const ix = await loadIndex();
+  const langCode = i => ix.langs[i];
+  const from = p.from ? tsOfIso(p.from) : -Infinity;
+  const to = p.to ? tsOfIso(p.to) + 86400 - 1 : Infinity;
+  const all = ix.rows.filter(r => r[F.ts] >= from && r[F.ts] <= to);
+  const rows = lang ? all.filter(r => langCode(r[F.lang]) === lang) : all;
+  const posN = rows.filter(r => r[F.up]).length, negN = rows.length - posN;
+  const free = rows.filter(r => r[F.free]), freeP = free.filter(r => r[F.up]).length;
+
+  // рейтинг языков за период (по всем языкам, без языкового фильтра)
+  const localized = new Set(DATA.languages.map(l => l.code));
+  const pl = { __other: { positive: 0, negative: 0, total: 0 } };
+  for (const r of all) {
+    const c = langCode(r[F.lang]), k = localized.has(c) ? c : '__other';
+    pl[k] = pl[k] || { positive: 0, negative: 0, total: 0 };
+    pl[k][r[F.up] ? 'positive' : 'negative']++; pl[k].total++;
+  }
+
+  // ряды для графиков: по дням (≤ 90 дней) или по неделям
+  const fIso = p.from || (rows.length ? isoOf(Math.min(...rows.map(r => r[F.ts]))) : ix.first_date);
+  const tIso = p.to || isoOf(Date.now() / 1000);
+  const days = Math.round((Date.parse(tIso) - Date.parse(fIso)) / 864e5) + 1;
+  const weekly = days > 90;
+  const byDay = {};
+  for (const r of rows) { const k = isoOf(r[F.ts]); (byDay[k] = byDay[k] || [0, 0])[r[F.up] ? 0 : 1]++; }
+  const series = [];
+  for (let t = Date.parse(fIso); t <= Date.parse(tIso); t += 864e5) {
+    const k = new Date(t).toISOString().slice(0, 10), v = byDay[k] || [0, 0];
+    if (!weekly) { series.push({ date: k, label: dayLabel(k), pos: v[0], neg: v[1] }); continue; }
+    const last = series[series.length - 1];
+    const wd = (new Date(t).getUTCDay() + 6) % 7;   // 0 = понедельник
+    if (!last || wd === 0) series.push({ date: k, end: k, label: dayLabel(k), pos: v[0], neg: v[1] });
+    else { last.pos += v[0]; last.neg += v[1]; last.end = k; }
+  }
+  series.forEach(s => { if (s.end) s.title = `Неделя ${dayLabel(s.date)} – ${dayLabel(s.end)}`; });
+
+  // темы
+  const tags = ix.tags.map((t, i) => {
+    let pos = 0, neg = 0; const bit = 2 ** i;
+    for (const r of rows) if (Math.floor(r[F.tags] / bit) % 2) r[F.up] ? pos++ : neg++;
+    return { id: t.id, name: t.name, pos, neg };
+  });
+
+  // отзывы: самый полезный и последние (тексты подгружаются по месяцам)
+  const withText = rows.filter(r => r[F.txt]).sort((a, b) => b[F.ts] - a[F.ts]);
+  const mh = rows.length ? rows.reduce((a, b) => (b[F.vu] > a[F.vu] || (b[F.vu] === a[F.vu] && b[F.vf] > a[F.vf])) ? b : a) : null;
+  const rp = withText.filter(r => r[F.up]).slice(0, 10), rn = withText.filter(r => !r[F.up]).slice(0, 10);
+  const need = [...rp, ...rn, ...(mh ? [mh] : [])];
+  await loadTexts(need.map(r => isoOf(r[F.ts]).slice(0, 7)));
+  const cardOf = r => {
+    const t = (TXT.get(isoOf(r[F.ts]).slice(0, 7)) || {})[r[F.id]] || ['', '', '', 0];
+    const code = langCode(r[F.lang]);
+    return { id: r[F.id], positive: !!r[F.up], language: code, language_ru: LANG_RU[code] || code, text: t[0], created: r[F.ts],
+      votes_up: r[F.vu], votes_funny: r[F.vf], playtime_h: t[3], free: !!r[F.free], author: t[1],
+      url: `https://steamcommunity.com/profiles/${(BigInt(76561197960265728) + BigInt(parseInt(t[2] || '0', 36))).toString()}/recommended/${DATA.app?.id || 1114150}/` };
+  };
+  return {
+    period: { ...p, from: fIso, to: tIso, days, weekly },
+    summary: { total: rows.length, positive: posN, negative: negN, score_desc: scoreDesc(posN, negN), pct: pct(posN, negN) },
+    free: { total: free.length, positive: freeP, negative: free.length - freeP },
+    series, tags: { all: tags }, period_langs: pl,
+    most_helpful: mh ? cardOf(mh) : null,
+    recent_positive: rp.map(cardOf), recent_negative: rn.map(cardOf),
+    languages: DATA.languages, languages_other: DATA.languages_other, by_language: DATA.by_language,
+  };
+}
+
+/* ---------- Фильтры: язык + период ---------- */
+let DATA = null, currentLang = null, currentPeriod = null;
 const langName = code => (DATA.languages.find(l => l.code === code) || {}).name || code;
 function sliceOf(code) {
   const s = code && DATA.by_language && DATA.by_language[code];
   return s ? s : DATA;
 }
-function renderSlice() {
-  const sl = sliceOf(currentLang), name = currentLang ? langName(currentLang) : null;
-  const bar = document.getElementById('filterBar');
-  if (name) {
-    bar.innerHTML = `<span>Показаны только отзывы на языке: <b>${esc(name)}</b> · всего отзывов: ${fmt(sl.summary.total)}</span><button type="button" id="resetLang">Показать все языки</button>`;
-    bar.hidden = false;
-    document.getElementById('resetLang').addEventListener('click', () => setLang(null));
-  } else { bar.hidden = true; bar.innerHTML = ''; }
-  renderCards(sl, name); renderPeriods(sl); renderLangs(DATA); renderTags(sl); renderReviews(sl);
+function renderCards(d, langName) {
+  const s = d.summary, f = d.free;
+  const chips = (langName ? `<span class="scope">только ${esc(langName.toLowerCase())}</span>` : '')
+    + (d.period ? `<span class="scope">${esc(periodText(currentPeriod))}</span>` : '');
+  document.getElementById('statCards').innerHTML =
+    card('Всего отзывов' + chips, fmt(s.total), `${s.score_desc}${s.total ? ' · ' + pctTxt(s.pct) + ' положительных' : ''}`) +
+    card('Положительные' + chips, fmt(s.positive), s.total ? pctTxt(pct(s.positive, s.negative)) + ' от всех' : '—', 'var(--pos)') +
+    card('Отрицательные' + chips, fmt(s.negative), s.total ? pctTxt(pct(s.negative, s.positive)) + ' от всех' : '—', 'var(--neg)') +
+    card('Получили игру бесплатно' + chips, fmt(f.total),
+      `<span style="color:var(--pos)">${fmt(f.positive)} положит.</span> · <span style="color:var(--neg)">${fmt(f.negative)} отрицат.</span>`);
+  document.getElementById('cardsNote').hidden = !d.period;
 }
-function setLang(code, fromHash) {
-  currentLang = code && DATA.by_language && DATA.by_language[code] ? code : null;
+function renderFilterBar(total) {
+  const bar = document.getElementById('filterBar');
+  const parts = [];
+  if (currentLang) parts.push(`<span class="chip">Язык: <b>${esc(langName(currentLang))}</b><button type="button" data-clear="lang" aria-label="Убрать фильтр по языку">×</button></span>`);
+  if (currentPeriod) parts.push(`<span class="chip">Период: <b>${esc(periodText(currentPeriod))}</b><button type="button" data-clear="period" aria-label="Убрать период">×</button></span>`);
+  if (!parts.length) { bar.hidden = true; bar.innerHTML = ''; return; }
+  bar.innerHTML = `<span>Показаны отзывы:</span>${parts.join('')}<span class="muted">всего: ${fmt(total)}</span><button type="button" id="resetAll">Сбросить фильтры</button>`;
+  bar.hidden = false;
+  bar.querySelectorAll('[data-clear]').forEach(b => b.addEventListener('click', () =>
+    b.dataset.clear === 'lang' ? applyFilters(null, currentPeriod) : resetPeriod()));
+  document.getElementById('resetAll').addEventListener('click', () => { fillPeriodInputs(null); applyFilters(null, null); });
+}
+async function renderAll() {
+  const token = ++filterToken;
+  let sl;
+  if (currentPeriod) {
+    setPeriodMsg('Загружаю отзывы за период…', 'info');
+    try { sl = await computePeriodSlice(currentLang, currentPeriod); }
+    catch (e) { setPeriodMsg('Не удалось загрузить отзывы за период: ' + e.message, 'err'); return; }
+    if (token !== filterToken) return;
+    setPeriodMsg('', '');
+  } else sl = sliceOf(currentLang);
+  lastSlice = sl;
+  const name = currentLang ? langName(currentLang) : null;
+  renderFilterBar(sl.summary.total);
+  renderCards(sl, name); renderPeriods(sl); renderLangs(sl.period ? sl : DATA); renderTags(sl); renderReviews(sl);
+  document.getElementById('periodReset').disabled = !currentPeriod;
+}
+let filterToken = 0, lastSlice = null;
+function hashOf(lang, p) {
+  if (!p) return lang || '';
+  return `${lang || 'all'}~${p.from || ''}~${p.to || ''}`;
+}
+function applyFilters(lang, period, fromHash) {
+  currentLang = lang && DATA.by_language && DATA.by_language[lang] ? lang : null;
+  currentPeriod = period && (period.from || period.to) ? period : null;
   if (!fromHash) {
-    const h = currentLang ? '#' + currentLang : ' ';
-    try { history.replaceState(null, '', currentLang ? h : location.pathname + location.search); } catch (e) { location.hash = currentLang || ''; }
+    const h = hashOf(currentLang, currentPeriod);
+    try { history.replaceState(null, '', h ? '#' + h : location.pathname + location.search); } catch (e) { location.hash = h; }
   }
-  renderSlice();
+  renderAll();
+}
+function parseHash() {
+  const h = decodeURIComponent((location.hash || '').replace('#', ''));
+  if (!h) return [null, null];
+  const [lang, from, to] = h.split('~');
+  const ok = s => /^\d{4}-\d{2}-\d{2}$/.test(s || '') ? s : null;
+  const p = (from !== undefined) ? { from: ok(from), to: ok(to) } : null;
+  return [lang && lang !== 'all' ? lang : null, p && (p.from || p.to) ? p : null];
+}
+
+/* Поля ввода дат */
+function setPeriodMsg(text, kind) {
+  const m = document.getElementById('periodMsg');
+  m.textContent = text; m.className = 'period-msg ' + (kind || ''); m.hidden = !text;
+}
+function fillPeriodInputs(p) {
+  document.getElementById('dateFrom').value = p && p.from ? ruDate(p.from) : '';
+  document.getElementById('dateTo').value = p && p.to ? ruDate(p.to) : '';
+}
+function maskDate(el) {
+  el.addEventListener('input', () => {
+    const digits = el.value.replace(/\D/g, '').slice(0, 8);
+    let out = digits.slice(0, 2);
+    if (digits.length > 2) out += '.' + digits.slice(2, 4);
+    if (digits.length > 4) out += '.' + digits.slice(4);
+    el.value = out;
+    el.classList.remove('bad');
+  });
+  el.addEventListener('keydown', e => { if (e.key === 'Enter') submitPeriod(); });
+}
+function submitPeriod() {
+  const fe = document.getElementById('dateFrom'), te = document.getElementById('dateTo');
+  const a = parseRuDate(fe.value), b = parseRuDate(te.value);
+  fe.classList.toggle('bad', !!a.error); te.classList.toggle('bad', !!b.error);
+  if (a.error || b.error) return setPeriodMsg(a.error || b.error, 'err');
+  if (a.empty && b.empty) return setPeriodMsg('Укажите хотя бы одну дату: «с» или «по»', 'err');
+  const today = isoOf(Date.now() / 1000), first = DATA.first_review_date || '2024-08-29';
+  if (a.iso && b.iso && a.iso > b.iso) { fe.classList.add('bad'); te.classList.add('bad'); return setPeriodMsg('Дата «с» позже даты «по»', 'err'); }
+  if (a.iso && a.iso > today) { fe.classList.add('bad'); return setPeriodMsg('Дата «с» ещё не наступила', 'err'); }
+  if (b.iso && b.iso < first) { te.classList.add('bad'); return setPeriodMsg(`Отзывы есть только с ${ruDate(first)}`, 'err'); }
+  setPeriodMsg('', '');
+  applyFilters(currentLang, { from: a.iso || null, to: b.iso || null });
+}
+function resetPeriod() {
+  fillPeriodInputs(null);
+  document.querySelectorAll('#periodPanel input').forEach(i => i.classList.remove('bad'));
+  setPeriodMsg('', '');
+  applyFilters(currentLang, null);
 }
 
 loadData().then(d => {
   DATA = d;
   renderMeta(d);
-  setLang((location.hash || '').replace('#', '') || null, true);
-  window.addEventListener('hashchange', () => setLang((location.hash || '').replace('#', '') || null, true));
+  document.getElementById('periodRange').textContent =
+    `Доступны даты с ${ruDate(d.first_review_date || '2024-08-29')} по ${ruDate(isoOf(Date.now() / 1000))}. Если указать только одну дату, вторая граница — начало или конец всех данных.`;
+  maskDate(document.getElementById('dateFrom')); maskDate(document.getElementById('dateTo'));
+  document.getElementById('periodApply').addEventListener('click', submitPeriod);
+  document.getElementById('periodReset').addEventListener('click', resetPeriod);
+  const [l, p] = parseHash(); fillPeriodInputs(p);
+  applyFilters(l, p, true);
+  window.addEventListener('hashchange', () => { const [l2, p2] = parseHash(); fillPeriodInputs(p2); applyFilters(l2, p2, true); });
   document.querySelectorAll('#tagPeriod button').forEach(b => b.addEventListener('click', () => {
     tagPeriod = b.dataset.p;
     document.querySelectorAll('#tagPeriod button').forEach(x => x.classList.toggle('on', x === b));
-    renderTags(sliceOf(currentLang));
+    renderTags(lastSlice || sliceOf(currentLang));
   }));
-  document.querySelectorAll('#tagTable th').forEach(th => th.addEventListener('click', () => {
+  document.querySelectorAll('#tagTable th').forEach(th => th.addEventListener('click', async () => {
     const k = th.dataset.k;
     if (sortKey === k) sortDir = -sortDir; else { sortKey = k; sortDir = k === 'name' ? 1 : -1; }
-    renderTags(sliceOf(currentLang));
+    renderTags(lastSlice || sliceOf(currentLang));
   }));
 }).catch(e => {
   document.getElementById('app').innerHTML = `<div class="err">Не удалось загрузить данные: ${esc(e.message)}.<br>Если вы открыли файл локально, запустите <code>python -m http.server</code> в папке <code>docs</code> или откройте опубликованную страницу GitHub Pages.</div>`;
 });
+
 </script>
 </body>
 </html>
