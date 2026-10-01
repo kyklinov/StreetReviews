@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<!-- CarX Street · дэшборд отзывов Steam · версия 1.4 (2026-10-02) — фильтр по языку -->
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Отзывы Steam — CarX Street</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #F6F6F4;
+    --surface: #FFFFFF;
+    --border: #E3E2DD;
+    --text: #1C1C1A;
+    --text-muted: #6B6A63;
+    --accent: #552583;
+    --accent-soft: #EEE9F5;
+    --accent2: #FDB927;
+    --accent2-soft: #FBF1D8;
+    --pos: #2E9E5B;
+    --pos-soft: #E3F3E9;
+    --neg: #D9622B;
+    --neg-soft: #FBE9E0;
+    --grid: #ECEBE6;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #161615; --surface: #1F1F1D; --border: #33322E; --text: #ECEBE6; --text-muted: #A3A29A;
+      --accent: #B28FE0; --accent-soft: #2E2640; --accent2: #FDB927; --accent2-soft: #3A3122;
+      --pos: #45B070; --pos-soft: #1C3326; --neg: #E8825A; --neg-soft: #3B261C; --grid: #2C2B28; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] { --bg: #161615; --surface: #1F1F1D; --border: #33322E; --text: #ECEBE6; --text-muted: #A3A29A; --accent: #B28FE0; --accent-soft: #2E2640; --accent2: #FDB927; --accent2-soft: #3A3122; --pos: #45B070; --pos-soft: #1C3326; --neg: #E8825A; --neg-soft: #3B261C; --grid: #2C2B28; color-scheme: dark; }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  header { padding: 28px 32px 20px; max-width: 1180px; margin: 0 auto; border-bottom: 1px solid var(--border);
+    display: flex; gap: 20px; align-items: center; }
+  header img { height: 56px; border-radius: 6px; display: block; }
+  h1 { font-size: 22px; font-weight: 600; margin: 0 0 4px; }
+  .subtitle { color: var(--text-muted); font-size: 14px; margin: 0; }
+  .subtitle a { color: var(--accent); text-decoration: none; }
+  main { max-width: 1180px; margin: 0 auto; padding: 24px 32px 60px; }
+  .cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; }
+  .card .label { font-size: 12px; color: var(--text-muted); margin-bottom: 6px; }
+  .card .value { font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .card .delta { font-size: 12px; color: var(--accent); margin-top: 4px; }
+  .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: 1px; }
+  .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; margin-bottom: 20px; min-width: 0; }
+  .panel h2 { font-size: 15px; font-weight: 600; margin: 0 0 14px; }
+  .panel h2 .sub { font-weight: 400; color: var(--text-muted); font-size: 12px; }
+  .note { color: var(--text-muted); font-size: 12px; margin: -6px 0 12px; line-height: 1.45; }
+  .grid-2 { display: grid; grid-template-columns: 1.6fr 1fr; gap: 20px; }
+  .grid-2e { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .mini-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 14px; }
+  .mini { background: var(--bg); border-radius: 8px; padding: 10px 12px; }
+  .mini .label { font-size: 11px; color: var(--text-muted); }
+  .mini .value { font-size: 18px; font-weight: 600; margin-top: 2px; font-variant-numeric: tabular-nums; }
+  .chart-box { position: relative; height: 240px; }
+  .legend { display: flex; gap: 16px; font-size: 12px; color: var(--text-muted); margin-bottom: 8px; }
+  .legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; background: var(--c); }
+
+  /* языки */
+  .bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 13px; }
+  .bar-label { width: 170px; color: var(--text-muted); flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bar-track { flex: 1; background: var(--neg-soft); border-radius: 4px; height: 10px; overflow: hidden; display: flex; }
+  .bar-fill { background: var(--pos); height: 100%; }
+  .bar-value { width: 52px; text-align: right; flex-shrink: 0; font-variant-numeric: tabular-nums; font-weight: 600; }
+  .bar-count { width: 64px; text-align: right; flex-shrink: 0; color: var(--text-muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+  .bar-row.other .bar-label { font-style: italic; }
+  button.bar-row { width: 100%; border: 0; background: none; font: inherit; color: inherit; text-align: left; cursor: pointer;
+    padding: 3px 6px; margin: 0 -6px 5px; border-radius: 6px; width: calc(100% + 12px); }
+  button.bar-row:hover { background: var(--bg); }
+  button.bar-row:hover .bar-label, button.bar-row.sel .bar-label { color: var(--text); }
+  button.bar-row:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  button.bar-row.sel { background: var(--accent-soft); }
+  button.bar-row.sel .bar-label { font-weight: 600; }
+  #langBars.filtered button.bar-row:not(.sel) { opacity: .55; }
+  #langBars.filtered button.bar-row:not(.sel):hover { opacity: 1; }
+  div.bar-row.other { padding: 3px 0; }
+  .filter-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; background: var(--accent-soft); border: 1px solid var(--accent);
+    border-radius: 10px; padding: 10px 14px; margin-bottom: 14px; font-size: 13px; }
+  .filter-bar b { font-weight: 600; }
+  .filter-bar button { margin-left: auto; border: 1px solid var(--accent); background: var(--surface); color: var(--accent);
+    border-radius: 6px; padding: 4px 12px; cursor: pointer; font: inherit; }
+  .card .scope { font-size: 11px; color: var(--accent); background: var(--accent-soft); border-radius: 8px; padding: 0 6px; margin-left: 6px; }
+
+  /* облако */
+  .seg { display: inline-flex; border: 1px solid var(--border); border-radius: 7px; overflow: hidden; font-size: 12px; vertical-align: middle; }
+  .seg button { border: 0; background: var(--surface); color: var(--text-muted); padding: 5px 12px; cursor: pointer; font: inherit; }
+  .seg button.on { background: var(--accent); color: var(--surface); }
+  .panel-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+  .panel-head h2 { margin: 0; }
+  .cloud-col h3 { font-size: 13px; font-weight: 600; margin: 0 0 8px; display: flex; align-items: center; gap: 6px; }
+  .cloud { min-height: 220px; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px 14px;
+    padding: 16px; border-radius: 8px; line-height: 1.15; text-align: center; }
+  .cloud.pos { background: var(--pos-soft); }
+  .cloud.neg { background: var(--neg-soft); }
+  .cloud-col, .grid-2e > *, .grid-2 > * { min-width: 0; }
+  .cloud .w { font-weight: 600; cursor: default; overflow-wrap: anywhere; transition: opacity .15s; }
+  .cloud .w sup { font-size: 11px; font-weight: 500; color: var(--text-muted); margin-left: 2px; }
+  .cloud:hover .w { opacity: .45; }
+  .cloud .w:hover { opacity: 1; }
+  .cloud.pos .w { color: var(--pos); }
+  .cloud.neg .w { color: var(--neg); }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; color: var(--text-muted); font-weight: 500; padding: 6px 8px; border-bottom: 1px solid var(--border); cursor: pointer; user-select: none; white-space: nowrap; }
+  th.num, td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  th .arr { font-size: 10px; }
+  td { padding: 7px 8px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tbody tr:hover td { background: var(--bg); }
+  .share { display: flex; align-items: center; gap: 8px; }
+  .share .t { flex: 1; height: 8px; border-radius: 4px; background: var(--pos-soft); overflow: hidden; min-width: 80px; }
+  .share .f { height: 100%; background: var(--neg); }
+  .share .v { width: 42px; text-align: right; font-variant-numeric: tabular-nums; }
+  .tbl-wrap { overflow-x: auto; margin-top: 10px; }
+  details.tbl summary { cursor: pointer; color: var(--accent); font-size: 13px; margin-top: 14px; }
+
+  /* отзывы */
+  .review { border: 1px solid var(--border); border-left: 3px solid var(--c); border-radius: 8px; padding: 12px 14px; margin-bottom: 10px; }
+  .review .meta { font-size: 12px; color: var(--text-muted); display: flex; flex-wrap: wrap; gap: 4px 12px; margin-bottom: 6px; }
+  .review .meta b { color: var(--text); font-weight: 600; }
+  .review .text { font-size: 13px; line-height: 1.5; white-space: pre-line; word-break: break-word;
+    display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+  .review.open .text { -webkit-line-clamp: unset; display: block; }
+  .review .actions { margin-top: 6px; display: flex; gap: 14px; font-size: 12px; }
+  .review .actions a, .review .actions button { color: var(--accent); text-decoration: none; background: none; border: 0; padding: 0; cursor: pointer; font: inherit; }
+  .tr-label { font-size: 11px; color: var(--text-muted); margin-bottom: 4px; letter-spacing: .02em; }
+  .review .orig { font-size: 12px; line-height: 1.5; color: var(--text-muted); white-space: pre-line; word-break: break-word;
+    margin-top: 8px; padding: 8px 10px; background: var(--bg); border-radius: 6px; }
+  .badge { display: inline-block; font-size: 11px; padding: 1px 7px; border-radius: 10px; background: var(--accent2-soft); color: var(--text); }
+  .verdict { font-weight: 600; color: var(--c); }
+  .top-review .text { font-size: 14px; -webkit-line-clamp: 8; }
+  .top-review .stats { display: flex; gap: 18px; margin-bottom: 10px; flex-wrap: wrap; }
+  .top-review .stats .mini { min-width: 120px; }
+
+  footer { max-width: 1180px; margin: 0 auto; padding: 0 32px 40px; color: var(--text-muted); font-size: 12px; line-height: 1.6; }
+  footer code { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 0 4px; }
+  .empty-note { color: var(--text-muted); font-size: 13px; padding: 20px 0; }
+  .err { background: var(--neg-soft); border: 1px solid var(--neg); border-radius: 10px; padding: 16px; }
+
+  @media (max-width: 900px) {
+    .cards { grid-template-columns: repeat(2, 1fr); }
+    .grid-2, .grid-2e { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 560px) {
+    header, main, footer { padding-left: 16px; padding-right: 16px; }
+    header img { display: none; }
+    .mini-cards { grid-template-columns: 1fr 1fr; }
+    .bar-label { width: 110px; }
+    .bar-count { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <img id="hdrImg" alt="" hidden>
+  <div>
+    <h1>Отзывы Steam — CarX Street</h1>
+    <p class="subtitle">Обновляется автоматически каждый день · <span id="updated">загрузка…</span> · <a id="storeLink" href="https://store.steampowered.com/app/1114150/" target="_blank" rel="noopener">страница в Steam ↗</a></p>
+  </div>
+</header>
+
+<main id="app">
+  <div class="filter-bar" id="filterBar" hidden></div>
+  <div class="cards" id="statCards"></div>
+
+  <div class="grid-2">
+    <div class="panel">
+      <h2>Новые отзывы по дням <span class="sub">последние 7 дней, МСК</span></h2>
+      <div class="mini-cards" id="weekCards"></div>
+      <div class="legend"><span style="--c:var(--pos)">Положительные</span><span style="--c:var(--neg)">Отрицательные</span></div>
+      <div class="chart-box" style="height:200px"><canvas id="weekChart" aria-label="Отзывы за 7 дней"></canvas></div>
+    </div>
+    <div class="panel">
+      <h2>Рейтинг по языкам <span class="sub">доля положительных, от большей к меньшей · нажмите на язык, чтобы отфильтровать дэшборд</span></h2>
+      <div id="langBars"></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Тренд за 30 дней <span class="sub">новые отзывы по дням, МСК</span></h2>
+    <div class="mini-cards" id="monthCards"></div>
+    <div class="legend"><span style="--c:var(--pos)">Положительные</span><span style="--c:var(--neg)">Отрицательные</span></div>
+    <div class="chart-box"><canvas id="monthChart" aria-label="Отзывы за 30 дней"></canvas></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h2>О чём пишут <span class="sub">темы и число отзывов, где они упоминаются</span></h2>
+      <div class="seg" id="tagPeriod"><button data-p="all" class="on">За всё время</button><button data-p="d30">30 дней</button></div>
+    </div>
+    <p class="note">Темы идут от самых упоминаемых к менее упоминаемым. Один отзыв засчитывается в тему один раз. Тема в положительном отзыве — это не всегда похвала (например, «отличная игра, но оптимизация хромает»), поэтому смотрите на долю упоминаний в отрицательных отзывах в таблице ниже.</p>
+    <div class="grid-2e">
+      <div class="cloud-col"><h3><span class="dot" style="background:var(--pos)"></span>В положительных отзывах</h3><div class="cloud pos" id="cloudPos"></div></div>
+      <div class="cloud-col"><h3><span class="dot" style="background:var(--neg)"></span>В отрицательных отзывах</h3><div class="cloud neg" id="cloudNeg"></div></div>
+    </div>
+    <details class="tbl" open>
+      <summary>Таблица по темам <span class="sub" style="color:var(--text-muted)">· нажмите на заголовок колонки, чтобы пересортировать</span></summary>
+      <div class="tbl-wrap"><table id="tagTable">
+        <thead><tr>
+          <th data-k="name">Тема</th>
+          <th data-k="pos" class="num">В положит.</th>
+          <th data-k="neg" class="num">В отрицат.</th>
+          <th data-k="total" class="num">Всего <span class="arr">▼</span></th>
+          <th data-k="share">Доля в отрицательных</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table></div>
+    </details>
+  </div>
+
+  <div class="panel top-review">
+    <h2>Самый полезный отзыв <span class="sub">больше всего отметок «Полезно» за всё время</span></h2>
+    <div id="topReview"></div>
+  </div>
+
+  <div class="grid-2e">
+    <div class="panel">
+      <h2>10 последних положительных <span class="sub">с машинным переводом на русский</span></h2>
+      <div id="recentPos"></div>
+    </div>
+    <div class="panel">
+      <h2>10 последних отрицательных <span class="sub">с машинным переводом на русский</span></h2>
+      <div id="recentNeg"></div>
+    </div>
+  </div>
+</main>
+
+<footer id="footer"></footer>
+
+<script>
+/* CarX Street · дэшборд отзывов · версия 1.4 */
+const fmt = n => (n ?? 0).toLocaleString('ru-RU');
+const pctTxt = v => v == null ? '—' : v.toFixed(1).replace('.', ',') + '%';
+const pct = (p, n) => (p + n) ? 100 * p / (p + n) : null;
+const MONTHS = ['янв','фев','мар','апр','мая','июн','июл','авг','сен','окт','ноя','дек'];
+const dayLabel = iso => { const [y,m,d] = iso.split('-').map(Number); return d + ' ' + MONTHS[m-1]; };
+const dateTime = ts => new Date(ts * 1000).toLocaleString('ru-RU', { timeZone: 'Europe/Moscow', day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+
+async function loadData() {
+  if (window.__DATA__) return window.__DATA__;           // встроенные данные (превью)
+  const r = await fetch('data.json?v=' + Date.now());
+  if (!r.ok) throw new Error('data.json: HTTP ' + r.status);
+  return r.json();
+}
+
+function card(label, value, delta, dot) {
+  return `<div class="card"><div class="label">${dot ? `<span class="dot" style="background:${dot}"></span>` : ''}${label}</div>
+    <div class="value">${value}</div><div class="delta">${delta || ''}</div></div>`;
+}
+function mini(label, value) { return `<div class="mini"><div class="label">${label}</div><div class="value">${value}</div></div>`; }
+
+function renderCards(d, langName) {
+  const s = d.summary, f = d.free;
+  const sc = langName ? `<span class="scope">только ${esc(langName.toLowerCase())}</span>` : '';
+  document.getElementById('statCards').innerHTML =
+    card('Всего отзывов' + sc, fmt(s.total), `${s.score_desc} · ${pctTxt(s.pct)} положительных`) +
+    card('Положительные' + sc, fmt(s.positive), pctTxt(pct(s.positive, s.negative)) + ' от всех', 'var(--pos)') +
+    card('Отрицательные' + sc, fmt(s.negative), pctTxt(pct(s.negative, s.positive)) + ' от всех', 'var(--neg)') +
+    card('Получили игру бесплатно' + sc, fmt(f.total),
+      `<span style="color:var(--pos)">${fmt(f.positive)} положит.</span> · <span style="color:var(--neg)">${fmt(f.negative)} отрицат.</span>`);
+}
+
+const charts = {};
+function stackedChart(id, rows) {
+  const grid = css('--grid'), muted = css('--text-muted');
+  if (charts[id]) { charts[id].destroy(); delete charts[id]; }
+  return charts[id] = new Chart(document.getElementById(id), {
+    type: 'bar',
+    data: {
+      labels: rows.map(r => dayLabel(r.date)),
+      datasets: [
+        { label: 'Положительные', data: rows.map(r => r.pos), backgroundColor: css('--pos'), borderRadius: 4, borderSkipped: false, borderWidth: { top: 2 }, borderColor: css('--surface'), maxBarThickness: 34 },
+        { label: 'Отрицательные', data: rows.map(r => r.neg), backgroundColor: css('--neg'), borderRadius: 4, borderSkipped: false, borderWidth: { top: 2 }, borderColor: css('--surface'), maxBarThickness: 34 },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: {
+          footer: items => { const p = items[0]?.parsed.y || 0, n = items[1]?.parsed.y || 0; const t = p + n;
+            return t ? `Всего: ${t} · положит. ${Math.round(100*p/t)}%` : 'Нет отзывов'; } } }
+      },
+      scales: {
+        x: { stacked: true, grid: { display: false }, ticks: { color: muted, maxRotation: 0, autoSkipPadding: 8, font: { size: 11 } } },
+        y: { stacked: true, beginAtZero: true, grid: { color: grid }, border: { display: false }, ticks: { color: muted, precision: 0, font: { size: 11 } } }
+      }
+    }
+  });
+}
+
+function renderPeriods(d) {
+  const all = d.daily30 || [];
+  const week = all.slice(-7);
+  const sum = rows => rows.reduce((a, r) => ({ pos: a.pos + r.pos, neg: a.neg + r.neg }), { pos: 0, neg: 0 });
+  const w = sum(week), m = sum(all);
+  const today = week[week.length - 1] || { pos: 0, neg: 0 };
+  document.getElementById('weekCards').innerHTML =
+    mini('За 7 дней', fmt(w.pos + w.neg)) +
+    mini('В среднем в день', ((w.pos + w.neg) / 7).toFixed(1).replace('.', ',')) +
+    mini('Сегодня (неполный день)', fmt(today.pos + today.neg));
+  document.getElementById('monthCards').innerHTML =
+    mini('Отзывов за 30 дней', `${fmt(m.pos + m.neg)} <span style="font-size:12px;font-weight:400;color:var(--text-muted)">(${fmt(m.pos)} / ${fmt(m.neg)})</span>`) +
+    mini('Положительных за 30 дней', pctTxt(pct(m.pos, m.neg))) +
+    mini('Положительных за всё время', pctTxt(d.summary?.pct));
+  stackedChart('weekChart', week);
+  stackedChart('monthChart', all);
+}
+
+function renderLangs(d) {
+  const canFilter = !!d.by_language;
+  const row = (name, l, cls = '', code = '') => {
+    const p = l.pct ?? pct(l.positive, l.negative);
+    const tag = code && canFilter && d.by_language[code] ? 'button' : 'div';
+    const sel = code && code === currentLang ? ' sel' : '';
+    return `<${tag} class="bar-row ${cls}${sel}" ${tag === 'button' ? `type="button" data-lang="${esc(code)}" aria-pressed="${sel ? 'true' : 'false'}"` : ''}
+      title="${esc(name)}: ${fmt(l.positive)} положит. / ${fmt(l.negative)} отрицат. · ${esc(l.score_desc || '')}">
+      <span class="bar-label">${esc(name)}</span>
+      <span class="bar-track"><span class="bar-fill" style="width:${p ?? 0}%"></span></span>
+      <span class="bar-value">${p == null ? '—' : Math.round(p) + '%'}</span>
+      <span class="bar-count">${fmt(l.total)}</span></${tag}>`;
+  };
+  let html = d.languages.filter(l => l.total > 0)
+    .sort((a, b) => (b.pct ?? -1) - (a.pct ?? -1) || b.total - a.total)
+    .map(l => row(l.name, l, '', l.code)).join('');
+  if (d.languages_other && d.languages_other.total) html += row('Прочие языки', d.languages_other, 'other');
+  html += `<p class="note" style="margin:10px 0 0">Зелёная часть полосы — положительные, оранжевая — отрицательные. Справа — число отзывов.</p>`;
+  const box = document.getElementById('langBars');
+  box.innerHTML = html;
+  box.classList.toggle('filtered', !!currentLang);
+  box.querySelectorAll('button.bar-row').forEach(b => b.addEventListener('click', () => {
+    setLang(b.dataset.lang === currentLang ? null : b.dataset.lang);
+  }));
+}
+
+/* Облако тэгов + таблица */
+let tagPeriod = 'all', sortKey = 'total', sortDir = -1;
+function renderCloud(el, items, key) {
+  const list = items.filter(t => t[key] > 0).sort((a, b) => b[key] - a[key]);
+  if (!list.length) { el.innerHTML = '<div class="empty-note">Нет упоминаний</div>'; return; }
+  const max = list[0][key], min = list[list.length - 1][key];
+  const big = window.innerWidth < 560 ? 14 : 22;
+  const scale = v => max === min ? 12 + big : 12 + big * Math.sqrt((v - min) / (max - min));
+  el.innerHTML = list.map(t =>
+    `<span class="w" style="font-size:${scale(t[key]).toFixed(1)}px" title="${esc(t.name)}: ${fmt(t[key])} отзывов">${esc(t.name)}<sup>${fmt(t[key])}</sup></span>`).join('');
+}
+function renderTags(d) {
+  const items = (d.tags[tagPeriod] || []).map(t => ({ ...t, total: t.pos + t.neg, share: (t.pos + t.neg) ? 100 * t.neg / (t.pos + t.neg) : 0 }));
+  renderCloud(document.getElementById('cloudPos'), items, 'pos');
+  renderCloud(document.getElementById('cloudNeg'), items, 'neg');
+  const rows = items.filter(t => t.total > 0).sort((a, b) => {
+    const x = a[sortKey], y = b[sortKey];
+    return (typeof x === 'string' ? x.localeCompare(y, 'ru') : x - y) * sortDir || b.total - a.total;
+  });
+  document.querySelector('#tagTable tbody').innerHTML = rows.map(t => `<tr>
+    <td>${esc(t.name)}</td><td class="num">${fmt(t.pos)}</td><td class="num">${fmt(t.neg)}</td><td class="num">${fmt(t.total)}</td>
+    <td><div class="share"><div class="t"><div class="f" style="width:${t.share.toFixed(1)}%"></div></div><div class="v">${Math.round(t.share)}%</div></div></td></tr>`).join('');
+  document.querySelectorAll('#tagTable th').forEach(th => {
+    const a = th.querySelector('.arr'); if (a) a.remove();
+    if (th.dataset.k === sortKey) th.insertAdjacentHTML('beforeend', ` <span class="arr">${sortDir < 0 ? '▼' : '▲'}</span>`);
+  });
+}
+
+function reviewHtml(r, big) {
+  if (!r) return '<div class="empty-note">Нет данных</div>';
+  const c = r.positive ? 'var(--pos)' : 'var(--neg)';
+  return `<div class="review" style="--c:${c}">
+    <div class="meta"><span class="verdict">${r.positive ? 'Рекомендует' : 'Не рекомендует'}</span>
+      <b>${esc(r.author)}</b><span>${dateTime(r.created)}</span><span>${esc(r.language_ru || r.language)}</span>
+      <span>${String(r.playtime_h).replace('.', ',')} ч в игре</span>
+      ${r.votes_up ? `<span>Полезно: ${fmt(r.votes_up)}</span>` : ''}
+      ${r.free ? '<span class="badge">получил бесплатно</span>' : ''}</div>
+    ${r.text_ru ? `<div class="tr-label">Машинный перевод · оригинал: ${esc(r.language_ru || r.language)}</div>` : ''}
+    <div class="text">${esc(r.text_ru || r.text) || '<i>без текста</i>'}</div>
+    ${r.text_ru ? `<div class="orig" hidden>${esc(r.text)}</div>` : ''}
+    <div class="actions"><button class="more" type="button">Развернуть</button>${r.text_ru ? '<button class="show-orig" type="button">Показать оригинал</button>' : ''}<a href="${esc(r.url)}" target="_blank" rel="noopener">Открыть в Steam ↗</a></div>
+  </div>`;
+}
+function wireReviews(root) {
+  root.querySelectorAll('.review:not([data-wired])').forEach(el => {
+    el.dataset.wired = '1';
+    const so = el.querySelector('.show-orig'), o = el.querySelector('.orig');
+    if (so) so.addEventListener('click', () => { o.hidden = !o.hidden; so.textContent = o.hidden ? 'Показать оригинал' : 'Скрыть оригинал'; });
+    const t = el.querySelector('.text'), b = el.querySelector('.more');
+    if (t.scrollHeight <= t.clientHeight + 2) { b.remove(); return; }
+    b.addEventListener('click', () => { el.classList.toggle('open'); b.textContent = el.classList.contains('open') ? 'Свернуть' : 'Развернуть'; });
+  });
+}
+
+/* Перевод на лету для отзывов без готового перевода (срезы по языкам) */
+const GL = { english:'en', german:'de', french:'fr', spanish:'es', latam:'es', portuguese:'pt', brazilian:'pt', polish:'pl',
+  turkish:'tr', italian:'it', schinese:'zh-CN', tchinese:'zh-TW', japanese:'ja', koreana:'ko', ukrainian:'uk', czech:'cs',
+  dutch:'nl', danish:'da', finnish:'fi', norwegian:'no', swedish:'sv', hungarian:'hu', romanian:'ro', thai:'th',
+  vietnamese:'vi', greek:'el', bulgarian:'bg', indonesian:'id', arabic:'ar' };
+const trCache = new Map();
+async function translateRu(text, lang) {
+  const key = lang + '|' + text;
+  if (trCache.has(key)) return trCache.get(key);
+  const p = (async () => {
+    const url = 'https://translate.googleapis.com/translate_a/single?client=gtx&dt=t&tl=ru&sl=' + (GL[lang] || 'auto') + '&q=' + encodeURIComponent(text.slice(0, 4500));
+    const r = await fetch(url); if (!r.ok) throw new Error(r.status);
+    const j = await r.json();
+    const out = (j[0] || []).map(x => x && x[0] || '').join('').trim();
+    return out && out.toLowerCase() !== text.trim().toLowerCase() ? out : null;
+  })().catch(() => null);
+  trCache.set(key, p);
+  return p;
+}
+function translateMissing(list, containerId, token) {
+  (list || []).forEach((r, i) => {
+    if (!r || r.text_ru || r.language === 'russian' || !/\p{L}/u.test(r.text || '')) return;
+    translateRu(r.text, r.language).then(tr => {
+      if (!tr || token !== renderToken) return;
+      r.text_ru = tr;
+      const root = document.getElementById(containerId);
+      const el = root && root.querySelectorAll('.review')[i];
+      if (!el) return;
+      el.outerHTML = reviewHtml(r);
+      wireReviews(root);
+    });
+  });
+}
+
+let renderToken = 0;
+function renderReviews(d) {
+  const token = ++renderToken;
+  const mh = d.most_helpful;
+  const top = document.getElementById('topReview');
+  top.innerHTML = mh ? `<div class="stats">${mini('Отметок «Полезно»', fmt(mh.votes_up))}${mini('Отметок «Забавно»', fmt(mh.votes_funny))}${mini('Оценка', mh.positive ? 'Рекомендует' : 'Не рекомендует')}</div>` + reviewHtml(mh, true) : reviewHtml(null);
+  document.getElementById('recentPos').innerHTML = (d.recent_positive || []).map(r => reviewHtml(r)).join('') || reviewHtml(null);
+  document.getElementById('recentNeg').innerHTML = (d.recent_negative || []).map(r => reviewHtml(r)).join('') || reviewHtml(null);
+  ['topReview', 'recentPos', 'recentNeg'].forEach(id => wireReviews(document.getElementById(id)));
+  translateMissing(d.recent_positive, 'recentPos', token);
+  translateMissing(d.recent_negative, 'recentNeg', token);
+}
+
+function renderMeta(d) {
+  const g = new Date(d.generated_at);
+  document.getElementById('updated').textContent = 'данные на ' + g.toLocaleString('ru-RU', { timeZone: 'Europe/Moscow', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }) + ' МСК';
+  if (d.app?.header_image) { const im = document.getElementById('hdrImg'); im.src = d.app.header_image; im.hidden = false; }
+  if (d.app?.url) document.getElementById('storeLink').href = d.app.url;
+  document.getElementById('footer').innerHTML = `
+    <p>Источник: открытое API отзывов Steam (<code>appreviews/${d.app?.id}</code>). Учитываются все отзывы — купившие в Steam, активировавшие ключ и получившие игру бесплатно, поэтому общее число может немного отличаться от цифры на странице магазина (там по умолчанию показаны только покупки в Steam).
+    Рейтинг по языкам — по сводке Steam для каждого языка, на который локализована страница; остальные языки собраны в строку «Прочие языки».
+    При выборе языка все блоки пересчитываются только по отзывам, написанным на этом языке (это язык отзыва, а не страна игрока).
+    Темы определяются по словарю ключевых слов на ${d.languages?.length || ''}+ языках (файл <code>scripts/tags.json</code>, его можно дополнять).
+    Загружено ${fmt(d.fetched?.count)} текстов отзывов (${pctTxt(d.fetched?.coverage)} от общего числа) — по ним считаются темы, динамика и бесплатные копии.</p>
+    <p>Дэшборд v1.4 · сборщик v${esc(d.version)}</p>`;
+}
+
+/* Фильтр по языку */
+let DATA = null, currentLang = null;
+const langName = code => (DATA.languages.find(l => l.code === code) || {}).name || code;
+function sliceOf(code) {
+  const s = code && DATA.by_language && DATA.by_language[code];
+  return s ? s : DATA;
+}
+function renderSlice() {
+  const sl = sliceOf(currentLang), name = currentLang ? langName(currentLang) : null;
+  const bar = document.getElementById('filterBar');
+  if (name) {
+    bar.innerHTML = `<span>Показаны только отзывы на языке: <b>${esc(name)}</b> · всего отзывов: ${fmt(sl.summary.total)}</span><button type="button" id="resetLang">Показать все языки</button>`;
+    bar.hidden = false;
+    document.getElementById('resetLang').addEventListener('click', () => setLang(null));
+  } else { bar.hidden = true; bar.innerHTML = ''; }
+  renderCards(sl, name); renderPeriods(sl); renderLangs(DATA); renderTags(sl); renderReviews(sl);
+}
+function setLang(code, fromHash) {
+  currentLang = code && DATA.by_language && DATA.by_language[code] ? code : null;
+  if (!fromHash) {
+    const h = currentLang ? '#' + currentLang : ' ';
+    try { history.replaceState(null, '', currentLang ? h : location.pathname + location.search); } catch (e) { location.hash = currentLang || ''; }
+  }
+  renderSlice();
+}
+
+loadData().then(d => {
+  DATA = d;
+  renderMeta(d);
+  setLang((location.hash || '').replace('#', '') || null, true);
+  window.addEventListener('hashchange', () => setLang((location.hash || '').replace('#', '') || null, true));
+  document.querySelectorAll('#tagPeriod button').forEach(b => b.addEventListener('click', () => {
+    tagPeriod = b.dataset.p;
+    document.querySelectorAll('#tagPeriod button').forEach(x => x.classList.toggle('on', x === b));
+    renderTags(sliceOf(currentLang));
+  }));
+  document.querySelectorAll('#tagTable th').forEach(th => th.addEventListener('click', () => {
+    const k = th.dataset.k;
+    if (sortKey === k) sortDir = -sortDir; else { sortKey = k; sortDir = k === 'name' ? 1 : -1; }
+    renderTags(sliceOf(currentLang));
+  }));
+}).catch(e => {
+  document.getElementById('app').innerHTML = `<div class="err">Не удалось загрузить данные: ${esc(e.message)}.<br>Если вы открыли файл локально, запустите <code>python -m http.server</code> в папке <code>docs</code> или откройте опубликованную страницу GitHub Pages.</div>`;
+});
+</script>
+</body>
+</html>
