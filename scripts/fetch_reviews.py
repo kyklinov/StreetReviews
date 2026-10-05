@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 CarX Street — сборщик отзывов Steam для дэшборда.
-Версия: 1.4 (2026-10-02) — данные по каждому отзыву для фильтра по периоду (docs/reviews/)
+Версия: 1.6 (2026-10-05) — переводится и самый полезный отзыв
 
 Что делает:
   1. Берёт сводку по отзывам (все типы покупок, все языки) и отдельно по каждому языку,
@@ -22,12 +22,13 @@ import urllib.request
 from collections import Counter, defaultdict
 from datetime import datetime, timedelta, timezone
 
-SCRIPT_VERSION = "1.4"
+SCRIPT_VERSION = "1.6"
 APP_ID = int(os.environ.get("APP_ID", "1114150"))
 TZ = timezone(timedelta(hours=3))  # Москва — границы дней считаем по МСК
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT_PATH = os.path.join(ROOT, "docs", "data.json")
 TAGS_PATH = os.path.join(ROOT, "scripts", "tags.json")
+GAMES_PATH = os.path.join(ROOT, "scripts", "games.json")
 REQUEST_PAUSE = float(os.environ.get("REQUEST_PAUSE", "1.5"))  # пауза между запросами, сек
 UA = "Mozilla/5.0 (compatible; carx-reviews-dashboard/1.0)"
 
@@ -185,7 +186,7 @@ def review_card(r, limit=700):
 # ---------- Перевод на русский ----------
 # Используется бесплатный публичный эндпоинт Google Translate (без ключа).
 # Если он недоступен — отзыв просто показывается без перевода, сборка не падает.
-TRANSLATE_SECTIONS = ("recent_positive", "recent_negative")  # можно добавить "most_helpful"
+TRANSLATE_SECTIONS = ("recent_positive", "recent_negative", "most_helpful")
 GOOGLE_LANG = {
     "english": "en", "german": "de", "french": "fr", "spanish": "es", "latam": "es",
     "portuguese": "pt", "brazilian": "pt", "polish": "pl", "turkish": "tr", "italian": "it",
@@ -233,6 +234,74 @@ def load_tags():
     return out
 
 
+# ---------- Упоминания других игр ----------
+GAMES = []          # [(id, name, regex, patterns)]
+NFS_GENERIC = None  # NFS без указания части
+
+
+def load_games():
+    global GAMES, NFS_GENERIC
+    if not os.path.exists(GAMES_PATH):
+        GAMES, NFS_GENERIC = [], None
+        return
+    with open(GAMES_PATH, encoding="utf-8") as f:
+        spec = json.load(f)
+    GAMES = [(g["id"], g["name"], re.compile("|".join(f"(?:{p})" for p in g["patterns"]), re.I), g["patterns"])
+             for g in spec["games"]]
+    NFS_GENERIC = re.compile("|".join(f"(?:{p})" for p in spec.get("nfs_generic", [])), re.I) if spec.get("nfs_generic") else None
+
+
+def mark_games(reviews):
+    """r["_games"] — id игр, упомянутых в отзыве; r["_nfsg"] — NFS упомянута, но без конкретной части."""
+    nfs_ids = {gid for gid, *_ in GAMES if gid.startswith("nfs_")}
+    for r in reviews:
+        text = r.get("review") or ""
+        r["_games"] = [gid for gid, _, rx, _ in GAMES if rx.search(text)]
+        r["_nfsg"] = bool(NFS_GENERIC and NFS_GENERIC.search(text) and not nfs_ids.intersection(r["_games"]))
+
+
+def game_snippet(text, rx, width=420):
+    """Фрагмент текста вокруг первого упоминания игры."""
+    text = clean_text(text)
+    m = rx.search(text)
+    if not m or len(text) <= width:
+        return clean_text(text, width)
+    start = max(0, m.start() - width // 3)
+    if start:
+        sp = text.find(" ", start)
+        start = sp + 1 if 0 <= sp < m.start() else start
+    out = text[start:start + width]
+    if start + width < len(text):
+        out = out.rsplit(" ", 1)[0] + "…"
+    return ("…" if start else "") + out
+
+
+def game_stats(reviews, examples=5, top=5):
+    cnt = {gid: [0, 0] for gid, *_ in GAMES}
+    gen = [0, 0]
+    for r in reviews:
+        k = 0 if r.get("voted_up") else 1
+        for gid in r.get("_games", ()):
+            cnt[gid][k] += 1
+        if r.get("_nfsg"):
+            gen[k] += 1
+    rows = [{"id": gid, "name": name, "pos": cnt[gid][0], "neg": cnt[gid][1]} for gid, name, *_ in GAMES]
+    rows.sort(key=lambda g: -(g["pos"] + g["neg"]))
+    ex = {}
+    by_id = {gid: rx for gid, _, rx, _ in GAMES}
+    for g in rows[:top]:
+        if not g["pos"] + g["neg"]:
+            continue
+        items = [r for r in reviews if g["id"] in r.get("_games", ()) and clean_text(r.get("review"))][:examples]
+        cards = []
+        for r in items:
+            c = review_card(r)
+            c["text"] = game_snippet(r.get("review"), by_id[g["id"]])
+            cards.append(c)
+        ex[g["id"]] = cards
+    return {"list": rows, "examples": ex, "nfs_generic": {"pos": gen[0], "neg": gen[1]}}
+
+
 def mark_tags(reviews, tags):
     """Один раз находит темы в каждом отзыве (список id в r["_tags"])."""
     for r in reviews:
@@ -274,14 +343,21 @@ def write_period_files(reviews, tags, out_dir):
     langs = sorted({r.get("language") or "" for r in reviews})
     li = {l: i for i, l in enumerate(langs)}
     tag_ids = [tid for tid, _, _ in tags]
+    game_ids = [gid for gid, *_ in GAMES]
     rows, texts = [], defaultdict(dict)
     for r in sorted(reviews, key=lambda x: x["timestamp_created"], reverse=True):
         mask = 0
         for tid in r.get("_tags", ()):
             mask |= 1 << tag_ids.index(tid)
+        gmask = 0
+        for gid in r.get("_games", ()):
+            gmask |= 1 << game_ids.index(gid)
+        if r.get("_nfsg"):
+            gmask |= 1 << len(game_ids)          # последний бит — NFS без указания части
         text = clean_text(r.get("review"), 600)
         rows.append([r["recommendationid"], r["timestamp_created"], 1 if r.get("voted_up") else 0, li[r.get("language") or ""],
-                     1 if r.get("received_for_free") else 0, r.get("votes_up", 0), r.get("votes_funny", 0), mask, 1 if text else 0])
+                     1 if r.get("received_for_free") else 0, r.get("votes_up", 0), r.get("votes_funny", 0), mask, 1 if text else 0,
+                     gmask])
         if text:
             a = r.get("author", {})
             month = datetime.fromtimestamp(r["timestamp_created"], TZ).strftime("%Y-%m")
@@ -292,7 +368,8 @@ def write_period_files(reviews, tags, out_dir):
     index = {"generated_at": datetime.now(TZ).isoformat(timespec="minutes"),
              "first_date": datetime.fromtimestamp(first, TZ).strftime("%Y-%m-%d") if first else None,
              "langs": langs, "tags": [{"id": tid, "name": name} for tid, name, _ in tags],
-             "fields": ["id", "ts", "up", "lang", "free", "votes_up", "votes_funny", "tags", "has_text"], "rows": rows}
+             "games": [{"id": gid, "name": name, "patterns": pats} for gid, name, _, pats in GAMES],
+             "fields": ["id", "ts", "up", "lang", "free", "votes_up", "votes_funny", "tags", "has_text", "games"], "rows": rows}
     with open(os.path.join(out_dir, "index.json"), "w", encoding="utf-8") as f:
         json.dump(index, f, ensure_ascii=False, separators=(",", ":"))
     keep = set()
@@ -337,6 +414,7 @@ def build_slice(reviews, summ, tags):
         "recent_positive": [review_card(r) for r in pos_reviews if clean_text(r.get("review"))][:10],
         "recent_negative": [review_card(r) for r in neg_reviews if clean_text(r.get("review"))][:10],
         "tags": {"all": tag_stats(reviews, tags), "d30": tag_stats(last30, tags)},
+        "games": game_stats(reviews),
         "last30_total": {"positive": sum(1 for r in last30 if r.get("voted_up")),
                          "negative": sum(1 for r in last30 if not r.get("voted_up"))},
     }
@@ -372,6 +450,8 @@ def main():
     reviews.sort(key=lambda r: r["timestamp_created"], reverse=True)
     tags = load_tags()
     mark_tags(reviews, tags)
+    load_games()
+    mark_games(reviews)
 
     # Языки, на которые страница не локализована, — одной строкой (разница со сводкой)
     lang_counts = Counter(r.get("language") for r in reviews)
@@ -397,6 +477,7 @@ def main():
     }
     # Срез «все языки» лежит на верхнем уровне (summary, free, daily30, tags, отзывы…)
     data.update(build_slice(reviews, total, tags))
+    data["games_meta"] = [{"id": gid, "name": name, "patterns": pats} for gid, name, _, pats in GAMES]
 
     log("Перевожу отзывы на русский…")
     for key in TRANSLATE_SECTIONS:
