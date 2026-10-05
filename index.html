@@ -1,0 +1,1499 @@
+<!DOCTYPE html>
+<!-- CarX Street · дэшборд отзывов · версия 1.7 (2026-10-05) — вкладки Steam / PlayStation / Xbox, логотип и ключевой арт, шрифт Oswald, всегда тёмная тема -->
+<html lang="ru" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300..700&display=swap" rel="stylesheet">
+<title>Отзывы CarX Street</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #F6F6F4;
+    --surface: #FFFFFF;
+    --border: #E3E2DD;
+    --text: #1C1C1A;
+    --text-muted: #6B6A63;
+    --accent: #552583;
+    --accent-soft: #EEE9F5;
+    --accent2: #FDB927;
+    --accent2-soft: #FBF1D8;
+    --pos: #2E9E5B;
+    --pos-soft: #E3F3E9;
+    --neg: #D9622B;
+    --neg-soft: #FBE9E0;
+    --neu: #A19F96;
+    --grid: #ECEBE6;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #161615; --surface: #1F1F1D; --border: #33322E; --text: #ECEBE6; --text-muted: #A3A29A;
+      --accent: #B28FE0; --accent-soft: #2E2640; --accent2: #FDB927; --accent2-soft: #3A3122;
+      --pos: #45B070; --pos-soft: #1C3326; --neg: #E8825A; --neg-soft: #3B261C; --grid: #2C2B28; --neu: #7D7B74; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] { --bg: #161615; --surface: #1F1F1D; --border: #33322E; --text: #ECEBE6; --text-muted: #A3A29A; --accent: #B28FE0; --accent-soft: #2E2640; --accent2: #FDB927; --accent2-soft: #3A3122; --pos: #45B070; --pos-soft: #1C3326; --neg: #E8825A; --neg-soft: #3B261C; --grid: #2C2B28; --neu: #7D7B74; color-scheme: dark; }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  button, input, select, textarea { font-family: inherit; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+    font-family: "Oswald", "Arial Narrow", -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-weight: 300; letter-spacing: .01em; }
+  /* шапка: ключевой арт + логотип (v1.7) */
+  .hero-wrap { max-width: 1180px; margin: 0 auto; padding: 20px 32px 0; }
+  .hero { position: relative; min-height: 260px; border-radius: 14px; overflow: hidden; display: flex; align-items: flex-end;
+    background: #0E0E12 url("assets/keyart-2000.webp") center 58% / cover no-repeat; color: #fff; }
+  .hero::before { content: ""; position: absolute; inset: 0;
+    background: linear-gradient(90deg, rgba(8,8,12,.88) 0%, rgba(8,8,12,.62) 38%, rgba(8,8,12,.08) 72%),
+                linear-gradient(0deg, rgba(8,8,12,.7) 0%, rgba(8,8,12,0) 55%); }
+  .hero-in { position: relative; padding: 28px 32px 24px; max-width: 720px; }
+  h1 { margin: 0 0 10px; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; font-weight: 500; }
+  h1 .logo { height: 64px; width: auto; display: block; }
+  h1 .h1-text { font-size: 22px; letter-spacing: .06em; text-transform: uppercase; color: #fff; }
+  .subtitle { color: rgba(255,255,255,.82); font-size: 14px; margin: 0; line-height: 1.6; }
+  .subtitle a { color: #FDB927; text-decoration: none; white-space: nowrap; }
+  .subtitle a:hover { text-decoration: underline; }
+  .subtitle .links { display: block; margin-top: 2px; }
+  @media (max-width: 640px) {
+    .hero-wrap { padding: 12px 16px 0; }
+    .hero { min-height: 200px; border-radius: 12px; background-image: url("assets/keyart-1000.webp"); background-position: 62% 50%; }
+    .hero::before { background: linear-gradient(0deg, rgba(8,8,12,.9) 0%, rgba(8,8,12,.55) 55%, rgba(8,8,12,.15) 100%); }
+    .hero-in { padding: 18px 16px 16px; }
+    h1 .logo { height: 42px; } h1 .h1-text { font-size: 17px; } .subtitle { font-size: 13px; }
+  }
+  main { max-width: 1180px; margin: 0 auto; padding: 24px 32px 60px; }
+  .cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; }
+  .card .label { font-size: 12px; color: var(--text-muted); margin-bottom: 6px; }
+  .card .value { font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .card .delta { font-size: 12px; color: var(--accent); margin-top: 4px; }
+  .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: 1px; }
+  .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; margin-bottom: 20px; min-width: 0; }
+  .panel h2 { font-size: 15px; font-weight: 600; margin: 0 0 14px; }
+  .panel h2 .sub { font-weight: 400; color: var(--text-muted); font-size: 12px; }
+  .note { color: var(--text-muted); font-size: 12px; margin: -6px 0 12px; line-height: 1.45; }
+  .grid-2 { display: grid; grid-template-columns: 1.6fr 1fr; gap: 20px; }
+  .grid-2e { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .mini-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 14px; }
+  .mini { background: var(--bg); border-radius: 8px; padding: 10px 12px; }
+  .mini .label { font-size: 11px; color: var(--text-muted); }
+  .mini .value { font-size: 18px; font-weight: 600; margin-top: 2px; font-variant-numeric: tabular-nums; }
+  .chart-box { position: relative; height: 240px; }
+  .legend { display: flex; gap: 16px; font-size: 12px; color: var(--text-muted); margin-bottom: 8px; }
+  .legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; background: var(--c); }
+
+  /* языки */
+  .bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 13px; }
+  .bar-label { width: 170px; color: var(--text-muted); flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bar-track { flex: 1; background: var(--neg-soft); border-radius: 4px; height: 10px; overflow: hidden; display: flex; }
+  .bar-fill { background: var(--pos); height: 100%; }
+  .bar-value { width: 52px; text-align: right; flex-shrink: 0; font-variant-numeric: tabular-nums; font-weight: 600; }
+  .bar-count { width: 64px; text-align: right; flex-shrink: 0; color: var(--text-muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+  .bar-row.other .bar-label { font-style: italic; }
+  button.bar-row { width: 100%; border: 0; background: none; font: inherit; color: inherit; text-align: left; cursor: pointer;
+    padding: 3px 6px; margin: 0 -6px 5px; border-radius: 6px; width: calc(100% + 12px); }
+  button.bar-row:hover { background: var(--bg); }
+  button.bar-row:hover .bar-label, button.bar-row.sel .bar-label { color: var(--text); }
+  button.bar-row:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  button.bar-row.sel { background: var(--accent-soft); }
+  button.bar-row.sel .bar-label { font-weight: 600; }
+  #langBars.filtered button.bar-row:not(.sel) { opacity: .55; }
+  #langBars.filtered button.bar-row:not(.sel):hover { opacity: 1; }
+  div.bar-row.other { padding: 3px 0; }
+  .filter-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; background: var(--accent-soft); border: 1px solid var(--accent);
+    border-radius: 10px; padding: 10px 14px; margin-bottom: 14px; font-size: 13px; }
+  .filter-bar b { font-weight: 600; }
+  .filter-bar button { margin-left: auto; border: 1px solid var(--accent); background: var(--surface); color: var(--accent);
+    border-radius: 6px; padding: 4px 12px; cursor: pointer; font: inherit; }
+  .cards-note { margin: -8px 0 16px; font-size: 12px; color: var(--text-muted); }
+  .mini-sub { font-size: 12px; font-weight: 400; color: var(--text-muted); }
+  #periodPanel { padding-block: 14px; }
+  .period-row { display: flex; align-items: center; gap: 10px 14px; flex-wrap: wrap; }
+  .period-row h2 { margin: 0 6px 0 0; }
+  .period-field { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-muted); }
+  .period-field input { width: 120px; font: inherit; font-size: 14px; color: var(--text); background: var(--surface);
+    border: 1px solid var(--border); border-radius: 7px; padding: 7px 10px; font-variant-numeric: tabular-nums; }
+  .period-field input:focus { outline: 2px solid var(--accent); outline-offset: 0; border-color: var(--accent); }
+  .period-field input.bad { border-color: var(--neg); background: var(--neg-soft); }
+  .btn-primary, .btn-ghost { font: inherit; font-size: 13px; border-radius: 7px; padding: 7px 14px; cursor: pointer; border: 1px solid var(--accent); }
+  .btn-primary { background: var(--accent); color: var(--surface); }
+  .btn-ghost { background: var(--surface); color: var(--accent); }
+  .btn-ghost:disabled { opacity: .45; cursor: default; }
+  .btn-primary:focus-visible, .btn-ghost:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .period-msg { margin: 10px 0 0; font-size: 13px; }
+  .period-msg.err { color: var(--neg); }
+  .period-msg.info { color: var(--text-muted); }
+  .filter-bar .chip { display: inline-flex; align-items: center; gap: 4px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 2px 4px 2px 10px; }
+  .filter-bar .chip button { margin: 0; border: 0; background: none; color: var(--text-muted); font-size: 15px; line-height: 1; padding: 2px 6px; cursor: pointer; border-radius: 10px; }
+  .filter-bar .chip button:hover { color: var(--neg); background: var(--neg-soft); }
+  .filter-bar .muted { color: var(--text-muted); }
+  @media (max-width: 560px) { .period-field input { width: 108px; } .period-row h2 { width: 100%; } }
+  .card { min-width: 0; }
+  .card .label { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 0; }
+  .game-row { display: grid; grid-template-columns: 26px minmax(0, 1.4fr) minmax(90px, 1fr) 52px 112px 58px; align-items: center; gap: 10px;
+    width: 100%; border: 0; background: none; font: inherit; color: inherit; text-align: left; cursor: pointer; padding: 9px 8px; border-radius: 8px; font-size: 13px; }
+  .game-row:hover { background: var(--bg); }
+  .game-row:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .game-row.open { background: var(--accent-soft); }
+  .game-row .rank { color: var(--text-muted); font-variant-numeric: tabular-nums; }
+  .game-row .gname { font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
+  .game-row .gname .chev { color: var(--text-muted); font-weight: 400; margin-left: 4px; display: inline-block; transition: transform .15s; }
+  .game-row.open .gname .chev { transform: rotate(90deg); }
+  .game-row .bar-track { height: 10px; }
+  .game-row .gpct { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .game-row .gcounts { text-align: right; font-size: 12px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .game-row .gtotal { text-align: right; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+  .games-head { display: grid; grid-template-columns: 26px minmax(0, 1.4fr) minmax(90px, 1fr) 52px 112px 58px; gap: 10px; padding: 0 8px 6px;
+    font-size: 11px; color: var(--text-muted); border-bottom: 1px solid var(--border); margin-bottom: 4px; }
+  .games-head span:nth-child(n+4) { text-align: right; }
+  .game-ex { padding: 8px 8px 12px 44px; }
+  .game-ex .ex-note { font-size: 12px; color: var(--text-muted); margin: 0 0 8px; }
+  .review mark { background: var(--accent2-soft); color: inherit; border-radius: 3px; padding: 0 2px; }
+  @media (max-width: 640px) {
+    .game-row, .games-head { grid-template-columns: 22px minmax(0, 1fr) 46px 58px; }
+    .game-row .bar-track, .game-row .gcounts, .games-head .h-bar, .games-head .h-counts { display: none; }
+    .game-ex { padding-left: 8px; }
+  }
+  .tabs-wrap { max-width: 1180px; margin: 0 auto; padding: 0 32px; border-bottom: 1px solid var(--border); }
+  .tabs { display: flex; gap: 4px; }
+  .tabs button { border: 0; background: none; font: inherit; font-size: 14px; font-weight: 600; color: var(--text-muted); cursor: pointer;
+    padding: 12px 16px 11px; border-bottom: 3px solid transparent; margin-bottom: -1px; }
+  .tabs button:hover { color: var(--text); }
+  .tabs button.on { color: var(--accent); border-bottom-color: var(--accent); }
+  .tabs button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; border-radius: 6px 6px 0 0; }
+  .tabs .tab-sub { font-weight: 400; font-size: 11px; color: var(--text-muted); margin-left: 6px; }
+  .cards.five { grid-template-columns: repeat(5, 1fr); }
+  .star-row { display: grid; grid-template-columns: 42px 1fr 46px 70px; align-items: center; gap: 10px; font-size: 13px; margin-bottom: 9px; }
+  .star-row .star-label { color: var(--text-muted); white-space: nowrap; }
+  .star-row .bar-track { background: var(--bg); height: 12px; }
+  .star-row .star-val { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .star-row .star-cnt { text-align: right; color: var(--text-muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+  .bar-fill.pos { background: var(--pos); } .bar-fill.neg { background: var(--neg); } .bar-fill.neu { background: var(--neu); }
+  .verdict.stars-pos { color: var(--pos); } .verdict.stars-neg { color: var(--neg); } .verdict.stars-neu { color: var(--neu); }
+  .verdict[class*="stars-"] { letter-spacing: 1px; }
+  .mk-head, .mk-row { display: grid; grid-template-columns: minmax(0, 1.3fr) 56px 64px minmax(70px, 1fr) 56px; gap: 10px; align-items: center; }
+  .mk-head { font-size: 11px; color: var(--text-muted); padding: 0 6px 6px; border-bottom: 1px solid var(--border); margin-bottom: 4px; }
+  .mk-head span:nth-child(2), .mk-head span:nth-child(3), .mk-head span:nth-child(5) { text-align: right; }
+  .mk-row { width: 100%; border: 0; background: none; font: inherit; color: inherit; text-align: left; cursor: pointer; padding: 7px 6px; border-radius: 6px; font-size: 13px; }
+  .mk-row:hover { background: var(--bg); }
+  .mk-row.sel { background: var(--accent-soft); font-weight: 600; }
+  #xbMarkets.filtered .mk-row:not(.sel) { opacity: .55; }
+  .mk-row:focus-visible { outline: 2px solid var(--accent); }
+  .mk-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .mk-avg { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .mk-cnt, .mk-n { text-align: right; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+  .mk-row .bar-track { background: var(--neg-soft); height: 10px; display: flex; }
+  .console-note { background: var(--accent2-soft); border-radius: 10px; padding: 12px 16px; font-size: 13px; line-height: 1.5; margin-bottom: 20px; }
+  .meta-note { color: var(--text-muted); font-size: 12px; line-height: 1.6; }
+  .meta-note a { color: var(--accent); }
+  @media (max-width: 900px) { .cards.five { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 560px) {
+    .tabs-wrap { padding: 0 16px; } .tabs button { padding: 10px 10px 9px; font-size: 13px; } .tabs .tab-sub { display: none; }
+    .mk-head, .mk-row { grid-template-columns: minmax(0, 1fr) 46px 52px 44px; } .mk-row .bar-track, .mk-head .h-bar { display: none; }
+  }
+  .sub-h { font-size: 12px; font-weight: 600; color: var(--text-muted); margin: 0 0 6px; }
+  #psApp, #xbApp { max-width: 1180px; margin: 0 auto; padding: 24px 32px 60px; }
+  @media (max-width: 560px) { #psApp, #xbApp { padding-left: 16px; padding-right: 16px; } }
+  .card .scope { font-size: 11px; color: var(--accent); background: var(--accent-soft); border-radius: 8px; padding: 0 6px; margin-left: 6px; }
+
+  /* облако */
+  .seg { display: inline-flex; border: 1px solid var(--border); border-radius: 7px; overflow: hidden; font-size: 12px; vertical-align: middle; }
+  .seg button { border: 0; background: var(--surface); color: var(--text-muted); padding: 5px 12px; cursor: pointer; font: inherit; }
+  .seg button.on { background: var(--accent); color: var(--surface); }
+  .panel-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+  .panel-head h2 { margin: 0; }
+  .cloud-col h3 { font-size: 13px; font-weight: 600; margin: 0 0 8px; display: flex; align-items: center; gap: 6px; }
+  .cloud { min-height: 220px; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px 14px;
+    padding: 16px; border-radius: 8px; line-height: 1.15; text-align: center; }
+  .cloud.pos { background: var(--pos-soft); }
+  .cloud.neg { background: var(--neg-soft); }
+  .cloud-col, .grid-2e > *, .grid-2 > * { min-width: 0; }
+  .cloud .w { font-weight: 600; cursor: default; overflow-wrap: anywhere; transition: opacity .15s; }
+  .cloud .w sup { font-size: 11px; font-weight: 500; color: var(--text-muted); margin-left: 2px; }
+  .cloud:hover .w { opacity: .45; }
+  .cloud .w:hover { opacity: 1; }
+  .cloud.pos .w { color: var(--pos); }
+  .cloud.neg .w { color: var(--neg); }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; color: var(--text-muted); font-weight: 500; padding: 6px 8px; border-bottom: 1px solid var(--border); cursor: pointer; user-select: none; white-space: nowrap; }
+  th.num, td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  th .arr { font-size: 10px; }
+  td { padding: 7px 8px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tbody tr:hover td { background: var(--bg); }
+  .share { display: flex; align-items: center; gap: 8px; }
+  .share .t { flex: 1; height: 8px; border-radius: 4px; background: var(--pos-soft); overflow: hidden; min-width: 80px; }
+  .share .f { height: 100%; background: var(--neg); }
+  .share .v { width: 42px; text-align: right; font-variant-numeric: tabular-nums; }
+  .tbl-wrap { overflow-x: auto; margin-top: 10px; }
+  details.tbl summary { cursor: pointer; color: var(--accent); font-size: 13px; margin-top: 14px; }
+
+  /* отзывы */
+  .review { border: 1px solid var(--border); border-left: 3px solid var(--c); border-radius: 8px; padding: 12px 14px; margin-bottom: 10px; }
+  .review .meta { font-size: 12px; color: var(--text-muted); display: flex; flex-wrap: wrap; gap: 4px 12px; margin-bottom: 6px; }
+  .review .meta b { color: var(--text); font-weight: 600; }
+  .review .text { font-size: 13px; line-height: 1.5; white-space: pre-line; word-break: break-word;
+    display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+  .review.open .text { -webkit-line-clamp: unset; display: block; }
+  .review .actions { margin-top: 6px; display: flex; gap: 14px; font-size: 12px; }
+  .review .actions a, .review .actions button { color: var(--accent); text-decoration: none; background: none; border: 0; padding: 0; cursor: pointer; font: inherit; }
+  .tr-label { font-size: 11px; color: var(--text-muted); margin-bottom: 4px; letter-spacing: .02em; }
+  .review .orig { font-size: 12px; line-height: 1.5; color: var(--text-muted); white-space: pre-line; word-break: break-word;
+    margin-top: 8px; padding: 8px 10px; background: var(--bg); border-radius: 6px; }
+  .badge { display: inline-block; font-size: 11px; padding: 1px 7px; border-radius: 10px; background: var(--accent2-soft); color: var(--text); }
+  .verdict { font-weight: 600; color: var(--c); }
+  .top-review .text { font-size: 14px; -webkit-line-clamp: 8; }
+  .top-review .stats { display: flex; gap: 18px; margin-bottom: 10px; flex-wrap: wrap; }
+  .top-review .stats .mini { min-width: 120px; }
+
+  footer { max-width: 1180px; margin: 0 auto; padding: 0 32px 40px; color: var(--text-muted); font-size: 12px; line-height: 1.6; }
+  footer code { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 0 4px; }
+  .empty-note { color: var(--text-muted); font-size: 13px; padding: 20px 0; }
+  .err { background: var(--neg-soft); border: 1px solid var(--neg); border-radius: 10px; padding: 16px; }
+
+  @media (max-width: 900px) {
+    .cards { grid-template-columns: repeat(2, 1fr); }
+    .grid-2, .grid-2e { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 560px) {
+    header, main, footer { padding-left: 16px; padding-right: 16px; }
+    header img { display: none; }
+    .mini-cards { grid-template-columns: 1fr 1fr; }
+    .bar-label { width: 110px; }
+    .bar-count { display: none; }
+  }
+
+  /* шапка: логотип на тёмной плашке; ключевой арт в подвале */
+  .hero { min-height: 0; background: #0E0E12; }
+  .hero::before { display: none; }
+  .hero-in { max-width: none; width: 100%; padding: 20px 28px; display: grid; grid-template-columns: auto 1fr; gap: 28px; align-items: center; }
+  .hero-in h1 { margin: 0; }
+  .hero-in .subtitle { border-left: 1px solid rgba(255,255,255,.18); padding-left: 28px; }
+  .art-foot { max-width: 1180px; margin: 8px auto 32px; padding: 0 32px; }
+  .art-foot-in { position: relative; min-height: 300px; border-radius: 14px; overflow: hidden; display: flex; align-items: flex-end;
+    background: #0E0E12 url("assets/keyart-2000.webp") center 58% / cover no-repeat; color: #fff; }
+  .art-foot-in::before { content: ""; position: absolute; inset: 0; background: linear-gradient(0deg, rgba(8,8,12,.85) 0%, rgba(8,8,12,.25) 45%, rgba(8,8,12,0) 70%); }
+  .art-foot-body { position: relative; width: 100%; padding: 22px 28px; display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  .art-foot-body .logo { height: 44px; width: auto; display: block; }
+  .art-foot-body p { margin: 0; font-size: 13px; color: rgba(255,255,255,.8); letter-spacing: .04em; text-transform: uppercase; }
+  @media (max-width: 640px) {
+    .hero { background: #0E0E12; }
+    .hero-in { grid-template-columns: 1fr; gap: 12px; padding: 16px; }
+    .hero-in .subtitle { border-left: 0; padding-left: 0; }
+    .art-foot { padding: 0 16px; margin-bottom: 20px; }
+    .art-foot-in { min-height: 190px; background-image: url("assets/keyart-1000.webp"); }
+    .art-foot-body { padding: 16px; } .art-foot-body .logo { height: 32px; } .art-foot-body p { font-size: 11px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="hero-wrap"><header class="hero">
+  <img id="hdrImg" alt="" hidden>
+  <div class="hero-in">
+    <h1><img class="logo" src="assets/logo.png" alt="CarX Street" width="392" height="100"><span class="h1-text">Отзывы игроков</span></h1>
+    <p class="subtitle">Обновляется автоматически каждый день · <span id="updated">загрузка…</span><span class="links"><a id="storeLink" href="https://store.steampowered.com/app/1114150/" target="_blank" rel="noopener">Steam Store ↗</a> · <a href="https://store.playstation.com/en-us/concept/10001917" target="_blank" rel="noopener">PlayStation Store (US) ↗</a> · <a href="https://www.xbox.com/en-US/games/store/carx-street/9nn082lmvv2c" target="_blank" rel="noopener">Xbox Store (US) ↗</a></p>
+  </div>
+</header></div>
+
+<div class="tabs-wrap"><nav class="tabs" role="tablist" aria-label="Платформа">
+  <button type="button" role="tab" data-tab="steam" class="on" aria-selected="true">Steam</button>
+  <button type="button" role="tab" data-tab="ps" aria-selected="false" tabindex="-1">PlayStation<span class="tab-sub">PS5</span></button>
+  <button type="button" role="tab" data-tab="xbox" aria-selected="false" tabindex="-1">Xbox<span class="tab-sub">Series X|S</span></button>
+</nav></div>
+
+<main id="app">
+  <div class="filter-bar" id="filterBar" hidden></div>
+  <div class="cards" id="statCards"></div>
+  <p class="cards-note" id="cardsNote" hidden>За выбранный период цифры посчитаны по загруженным отзывам и могут немного отличаться от сводки Steam.</p>
+
+  <div class="panel" id="periodPanel">
+    <div class="period-row">
+      <h2>Период</h2>
+      <label class="period-field"><span>с</span><input id="dateFrom" type="text" inputmode="numeric" placeholder="дд.мм.гггг" maxlength="10" autocomplete="off" aria-label="Дата начала периода"></label>
+      <label class="period-field"><span>по</span><input id="dateTo" type="text" inputmode="numeric" placeholder="дд.мм.гггг" maxlength="10" autocomplete="off" aria-label="Дата конца периода"></label>
+      <button type="button" class="btn-primary" id="periodApply">Показать</button>
+      <button type="button" class="btn-ghost" id="periodReset" disabled>Сбросить даты</button>
+    </div>
+    <p class="period-msg" id="periodMsg" hidden></p>
+    <p class="note" id="periodRange" style="margin:8px 0 0"></p>
+  </div>
+
+  <div class="grid-2">
+    <div class="panel">
+      <h2 id="weekTitle">Новые отзывы по дням <span class="sub">последние 7 дней, МСК</span></h2>
+      <div class="mini-cards" id="weekCards"></div>
+      <div class="legend"><span style="--c:var(--pos)">Положительные</span><span style="--c:var(--neg)">Отрицательные</span></div>
+      <div class="chart-box" style="height:200px"><canvas id="weekChart" aria-label="Отзывы за 7 дней"></canvas></div>
+    </div>
+    <div class="panel">
+      <h2>Рейтинг по языкам <span class="sub" id="langSub">доля положительных, от большей к меньшей · нажмите на язык, чтобы отфильтровать дэшборд</span></h2>
+      <div id="langBars"></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2 id="monthTitle">Тренд за 30 дней <span class="sub">новые отзывы по дням, МСК</span></h2>
+    <div class="mini-cards" id="monthCards"></div>
+    <div class="legend" id="monthLegend"><span style="--c:var(--pos)">Положительные</span><span style="--c:var(--neg)">Отрицательные</span></div>
+    <div class="chart-box"><canvas id="monthChart" aria-label="Отзывы за 30 дней"></canvas></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h2>О чём пишут <span class="sub" id="tagSub">темы и число отзывов, где они упоминаются</span></h2>
+      <div class="seg" id="tagPeriod"><button data-p="all" class="on">За всё время</button><button data-p="d30">30 дней</button></div>
+    </div>
+    <p class="note">Темы идут от самых упоминаемых к менее упоминаемым. Один отзыв засчитывается в тему один раз. Тема в положительном отзыве — это не всегда похвала (например, «отличная игра, но оптимизация хромает»), поэтому смотрите на долю упоминаний в отрицательных отзывах в таблице ниже.</p>
+    <div class="grid-2e">
+      <div class="cloud-col"><h3><span class="dot" style="background:var(--pos)"></span>В положительных отзывах</h3><div class="cloud pos" id="cloudPos"></div></div>
+      <div class="cloud-col"><h3><span class="dot" style="background:var(--neg)"></span>В отрицательных отзывах</h3><div class="cloud neg" id="cloudNeg"></div></div>
+    </div>
+    <details class="tbl" open>
+      <summary>Таблица по темам <span class="sub" style="color:var(--text-muted)">· нажмите на заголовок колонки, чтобы пересортировать</span></summary>
+      <div class="tbl-wrap"><table id="tagTable">
+        <thead><tr>
+          <th data-k="name">Тема</th>
+          <th data-k="pos" class="num">В положит.</th>
+          <th data-k="neg" class="num">В отрицат.</th>
+          <th data-k="total" class="num">Всего <span class="arr">▼</span></th>
+          <th data-k="share">Доля в отрицательных</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table></div>
+    </details>
+  </div>
+
+  <div class="panel" id="gamesPanel">
+    <h2>Упоминания других игр <span class="sub" id="gamesSub">топ-5 игр по числу отзывов, где они упоминаются · нажмите на игру, чтобы увидеть примеры</span></h2>
+    <div class="legend"><span style="--c:var(--pos)">В положительных отзывах</span><span style="--c:var(--neg)">В отрицательных отзывах</span></div>
+    <div id="gamesList"></div>
+    <p class="note" id="gamesNote" style="margin:10px 0 0"></p>
+  </div>
+
+  <div class="panel top-review">
+    <h2>Самый полезный отзыв <span class="sub" id="topSub">больше всего отметок «Полезно» за всё время</span></h2>
+    <div id="topReview"></div>
+  </div>
+
+  <div class="grid-2e">
+    <div class="panel">
+      <h2><span id="posTitle">10 последних положительных</span> <span class="sub">с машинным переводом на русский</span></h2>
+      <div id="recentPos"></div>
+    </div>
+    <div class="panel">
+      <h2><span id="negTitle">10 последних отрицательных</span> <span class="sub">с машинным переводом на русский</span></h2>
+      <div id="recentNeg"></div>
+    </div>
+  </div>
+</main>
+
+<main id="psApp" hidden>
+  <p class="console-note">В PlayStation Store нет текстовых отзывов — магазин показывает только оценки от 1 до 5 звёзд. Поэтому здесь нет тем, упоминаний игр и примеров отзывов.</p>
+  <div class="cards five" id="psCards"></div>
+  <div class="grid-2">
+    <div class="panel">
+      <h2>Динамика оценок <span class="sub">по ежедневным снимкам</span></h2>
+      <p class="note" id="psHistNote"></p>
+      <div id="psCharts" hidden>
+        <h3 class="sub-h">Новых оценок за день</h3>
+        <div class="chart-box" style="height:180px"><canvas id="psNewChart" aria-label="Новые оценки по дням"></canvas></div>
+        <h3 class="sub-h" style="margin-top:16px">Средняя оценка</h3>
+        <div class="chart-box" style="height:160px"><canvas id="psAvgChart" aria-label="Средняя оценка по дням"></canvas></div>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>Распределение оценок <span class="sub">доля и примерное число оценок</span></h2>
+      <div id="psStars"></div>
+    </div>
+  </div>
+  <p class="meta-note" id="psMeta"></p>
+</main>
+
+<main id="xbApp" hidden>
+  <div class="filter-bar" id="xbFilterBar" hidden></div>
+  <div class="cards five" id="xbCards"></div>
+
+  <div class="panel" id="xbPeriodPanel">
+    <div class="period-row">
+      <h2>Период</h2>
+      <label class="period-field"><span>с</span><input id="xbDateFrom" type="text" inputmode="numeric" placeholder="дд.мм.гггг" maxlength="10" autocomplete="off" aria-label="Дата начала периода"></label>
+      <label class="period-field"><span>по</span><input id="xbDateTo" type="text" inputmode="numeric" placeholder="дд.мм.гггг" maxlength="10" autocomplete="off" aria-label="Дата конца периода"></label>
+      <button type="button" class="btn-primary" id="xbPeriodApply">Показать</button>
+      <button type="button" class="btn-ghost" id="xbPeriodReset" disabled>Сбросить даты</button>
+    </div>
+    <p class="period-msg" id="xbPeriodMsg" hidden></p>
+  </div>
+
+  <div class="grid-2">
+    <div class="panel">
+      <h2 id="xbWeekTitle">Новые отзывы по дням</h2>
+      <div class="mini-cards" id="xbWeekCards"></div>
+      <div class="legend"><span style="--c:var(--pos)">4–5 ★</span><span style="--c:var(--neu)">3 ★</span><span style="--c:var(--neg)">1–2 ★</span></div>
+      <div class="chart-box" style="height:220px"><canvas id="xbWeekChart" aria-label="Отзывы Xbox по дням"></canvas></div>
+    </div>
+    <div class="panel">
+      <h2>Страны магазина <span class="sub">средняя оценка, от большей к меньшей · нажмите на страну, чтобы отфильтровать</span></h2>
+      <div id="xbMarkets"></div>
+      <p class="note" style="margin:10px 0 0">«Средняя» и «Оценок» — все оценки в магазине страны. Полоса — текстовые отзывы: зелёное — 4–5 ★, серое — 3 ★, оранжевое — 1–2 ★.</p>
+    </div>
+  </div>
+
+  <div class="grid-2" id="xbMonthPanel">
+    <div class="panel">
+      <h2>Тренд за 30 дней <span class="sub">текстовые отзывы по дням, МСК</span></h2>
+      <div class="legend"><span style="--c:var(--pos)">4–5 ★</span><span style="--c:var(--neu)">3 ★</span><span style="--c:var(--neg)">1–2 ★</span></div>
+      <div class="chart-box"><canvas id="xbMonthChart" aria-label="Отзывы Xbox за 30 дней"></canvas></div>
+    </div>
+    <div class="panel">
+      <h2>Звёзды в текстовых отзывах</h2>
+      <div id="xbStars"></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>О чём пишут <span class="sub">темы и число отзывов, где они упоминаются</span></h2>
+    <div class="grid-2e">
+      <div class="cloud-col"><h3><span class="dot" style="background:var(--pos)"></span>В положительных (4–5 ★)</h3><div class="cloud pos" id="xbCloudPos"></div></div>
+      <div class="cloud-col"><h3><span class="dot" style="background:var(--neg)"></span>В отрицательных (1–2 ★)</h3><div class="cloud neg" id="xbCloudNeg"></div></div>
+    </div>
+    <details class="tbl" open>
+      <summary>Таблица по темам <span class="sub" style="color:var(--text-muted)">· нажмите на заголовок, чтобы пересортировать</span></summary>
+      <div class="tbl-wrap"><table id="xbTagTable"><thead><tr>
+        <th data-k="name">Тема</th><th data-k="pos" class="num">4–5 ★</th><th data-k="neu" class="num">3 ★</th><th data-k="neg" class="num">1–2 ★</th><th data-k="total" class="num">Всего</th><th data-k="share">Доля в 1–2 ★</th>
+      </tr></thead><tbody></tbody></table></div>
+    </details>
+  </div>
+
+  <div class="panel">
+    <h2>Упоминания других игр <span class="sub">топ-5 · нажмите на игру, чтобы увидеть примеры</span></h2>
+    <div class="legend"><span style="--c:var(--pos)">4–5 ★</span><span style="--c:var(--neu)">3 ★</span><span style="--c:var(--neg)">1–2 ★</span></div>
+    <div id="xbGames"></div>
+    <p class="note" id="xbGamesNote" style="margin:10px 0 0"></p>
+  </div>
+
+  <div class="panel top-review">
+    <h2>Самый полезный отзыв <span class="sub">больше всего отметок «Полезно»</span></h2>
+    <div class="stats" id="xbTopStats"></div>
+    <div id="xbTop"></div>
+  </div>
+
+  <div class="grid-2e">
+    <div class="panel"><h2>10 последних положительных <span class="sub">4–5 ★, с машинным переводом</span></h2><div id="xbRecentPos"></div></div>
+    <div class="panel"><h2>10 последних отрицательных <span class="sub">1–2 ★, с машинным переводом</span></h2><div id="xbRecentNeg"></div></div>
+  </div>
+  <p class="meta-note" id="xbMeta"></p>
+</main>
+
+<footer id="footer"></footer>
+<div class="art-foot"><div class="art-foot-in"><div class="art-foot-body">
+  <img class="logo" src="assets/logo.png" alt="CarX Street" width="392" height="100">
+  <p>Дэшборд отзывов игроков · Steam · PlayStation · Xbox</p>
+</div></div></div>
+
+<script>
+/* CarX Street · дэшборд отзывов · версия 1.7 */
+if (window.Chart && Chart.defaults && Chart.defaults.font) Chart.defaults.font.family = '"Oswald", "Arial Narrow", sans-serif';
+const fmt = n => (n ?? 0).toLocaleString('ru-RU');
+const pctTxt = v => v == null ? '—' : v.toFixed(1).replace('.', ',') + '%';
+const pct = (p, n) => (p + n) ? 100 * p / (p + n) : null;
+const MONTHS = ['янв','фев','мар','апр','мая','июн','июл','авг','сен','окт','ноя','дек'];
+const dayLabel = iso => { const [y,m,d] = iso.split('-').map(Number); return d + ' ' + MONTHS[m-1]; };
+const dateTime = ts => new Date(ts * 1000).toLocaleString('ru-RU', { timeZone: 'Europe/Moscow', day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+
+async function loadData() {
+  if (window.__DATA__) return window.__DATA__;           // встроенные данные (превью)
+  const r = await fetch('data.json?v=' + Date.now());
+  if (!r.ok) throw new Error('data.json: HTTP ' + r.status);
+  return r.json();
+}
+
+function card(label, value, delta, dot) {
+  return `<div class="card"><div class="label">${dot ? `<span class="dot" style="background:${dot}"></span>` : ''}${label}</div>
+    <div class="value">${value}</div><div class="delta">${delta || ''}</div></div>`;
+}
+function mini(label, value) { return `<div class="mini"><div class="label">${label}</div><div class="value">${value}</div></div>`; }
+
+const charts = {};
+function stackedChart(id, rows) {
+  const grid = css('--grid'), muted = css('--text-muted');
+  if (charts[id]) { charts[id].destroy(); delete charts[id]; }
+  return charts[id] = new Chart(document.getElementById(id), {
+    type: 'bar',
+    data: {
+      labels: rows.map(r => r.label || dayLabel(r.date)),
+      datasets: [
+        { label: 'Положительные', data: rows.map(r => r.pos), backgroundColor: css('--pos'), borderRadius: 4, borderSkipped: false, borderWidth: { top: 2 }, borderColor: css('--surface'), maxBarThickness: 34 },
+        { label: 'Отрицательные', data: rows.map(r => r.neg), backgroundColor: css('--neg'), borderRadius: 4, borderSkipped: false, borderWidth: { top: 2 }, borderColor: css('--surface'), maxBarThickness: 34 },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: {
+          title: items => rows[items[0].dataIndex].title || items[0].label,
+          footer: items => { const p = items[0]?.parsed.y || 0, n = items[1]?.parsed.y || 0; const t = p + n;
+            return t ? `Всего: ${t} · положит. ${Math.round(100*p/t)}%` : 'Нет отзывов'; } } }
+      },
+      scales: {
+        x: { stacked: true, grid: { display: false }, ticks: { color: muted, maxRotation: 0, autoSkipPadding: 8, font: { size: 11 } } },
+        y: { stacked: true, beginAtZero: true, grid: { color: grid }, border: { display: false }, ticks: { color: muted, precision: 0, font: { size: 11 } } }
+      }
+    }
+  });
+}
+
+/* ---------- Динамика (графики) ---------- */
+function lineChart(id, rows) {
+  const grid = css('--grid'), muted = css('--text-muted');
+  if (charts[id]) { charts[id].destroy(); delete charts[id]; }
+  return charts[id] = new Chart(document.getElementById(id), {
+    type: 'line',
+    data: {
+      labels: rows.map(r => r.label),
+      datasets: [{ label: 'Доля положительных', data: rows.map(r => (r.pos + r.neg) ? Math.round(1000 * r.pos / (r.pos + r.neg)) / 10 : null),
+        borderColor: css('--pos'), backgroundColor: css('--pos'), borderWidth: 2, pointRadius: rows.length > 40 ? 0 : 3, pointHoverRadius: 5, tension: 0.25, spanGaps: true }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: { legend: { display: false }, tooltip: { callbacks: {
+        title: items => rows[items[0].dataIndex].title || items[0].label,
+        label: item => { const r = rows[item.dataIndex]; return ` ${String(item.parsed.y).replace('.', ',')}% положительных`; },
+        footer: items => { const r = rows[items[0].dataIndex]; return `Отзывов: ${r.pos + r.neg} (${r.pos} / ${r.neg})`; } } } },
+      scales: {
+        x: { grid: { display: false }, ticks: { color: muted, maxRotation: 0, autoSkipPadding: 8, font: { size: 11 } } },
+        y: { min: 0, max: 100, grid: { color: grid }, border: { display: false }, ticks: { color: muted, stepSize: 25, callback: v => v + '%', font: { size: 11 } } }
+      }
+    }
+  });
+}
+
+function renderPeriods(d) {
+  if (d.period) return renderPeriodCharts(d);
+  setPanelTitles(false);
+  const all = d.daily30 || [];
+  const week = all.slice(-7);
+  const sum = rows => rows.reduce((a, r) => ({ pos: a.pos + r.pos, neg: a.neg + r.neg }), { pos: 0, neg: 0 });
+  const w = sum(week), m = sum(all);
+  const today = week[week.length - 1] || { pos: 0, neg: 0 };
+  document.getElementById('weekCards').innerHTML =
+    mini('За 7 дней', fmt(w.pos + w.neg)) +
+    mini('В среднем в день', ((w.pos + w.neg) / 7).toFixed(1).replace('.', ',')) +
+    mini('Сегодня (неполный день)', fmt(today.pos + today.neg));
+  document.getElementById('monthCards').innerHTML =
+    mini('Отзывов за 30 дней', `${fmt(m.pos + m.neg)} <span class="mini-sub">(${fmt(m.pos)} / ${fmt(m.neg)})</span>`) +
+    mini('Положительных за 30 дней', pctTxt(pct(m.pos, m.neg))) +
+    mini('Положительных за всё время', pctTxt(d.summary?.pct));
+  stackedChart('weekChart', week.map(r => ({ ...r, label: dayLabel(r.date) })));
+  stackedChart('monthChart', all.map(r => ({ ...r, label: dayLabel(r.date) })));
+}
+
+function renderPeriodCharts(d) {
+  const p = d.period, buckets = d.series;
+  setPanelTitles(true, p.weekly);
+  const tot = buckets.reduce((a, r) => ({ pos: a.pos + r.pos, neg: a.neg + r.neg }), { pos: 0, neg: 0 });
+  document.getElementById('weekCards').innerHTML =
+    mini('За период', fmt(tot.pos + tot.neg)) +
+    mini('В среднем в день', ((tot.pos + tot.neg) / p.days).toFixed(1).replace('.', ',')) +
+    mini('Дней в периоде', fmt(p.days));
+  document.getElementById('monthCards').innerHTML =
+    mini('Отзывов за период', `${fmt(tot.pos + tot.neg)} <span class="mini-sub">(${fmt(tot.pos)} / ${fmt(tot.neg)})</span>`) +
+    mini('Положительных за период', pctTxt(pct(tot.pos, tot.neg))) +
+    mini('Положительных за всё время', pctTxt(sliceOf(currentLang).summary?.pct));
+  stackedChart('weekChart', buckets);
+  lineChart('monthChart', buckets);
+}
+
+function setPanelTitles(period, weekly) {
+  const unit = weekly ? 'неделям' : 'дням';
+  document.getElementById('weekTitle').innerHTML = period
+    ? `Отзывы за период по ${unit} <span class="sub">${esc(periodText(currentPeriod))}, МСК</span>`
+    : 'Новые отзывы по дням <span class="sub">последние 7 дней, МСК</span>';
+  document.getElementById('monthTitle').innerHTML = period
+    ? `Доля положительных за период <span class="sub">по ${unit}, МСК</span>`
+    : 'Тренд за 30 дней <span class="sub">новые отзывы по дням, МСК</span>';
+  document.getElementById('monthLegend').hidden = !!period;
+  document.getElementById('tagPeriod').hidden = !!period;
+  document.getElementById('tagSub').textContent = period ? 'за выбранный период' : 'темы и число отзывов, где они упоминаются';
+  document.getElementById('topSub').textContent = period ? 'больше всего отметок «Полезно» среди отзывов за период' : 'больше всего отметок «Полезно» за всё время';
+  document.getElementById('posTitle').textContent = period ? '10 последних положительных за период' : '10 последних положительных';
+  document.getElementById('negTitle').textContent = period ? '10 последних отрицательных за период' : '10 последних отрицательных';
+  document.getElementById('langSub').textContent = period
+    ? 'за выбранный период, по загруженным отзывам · нажмите на язык, чтобы отфильтровать дэшборд'
+    : 'доля положительных, от большей к меньшей · нажмите на язык, чтобы отфильтровать дэшборд';
+}
+
+function renderLangs(d) {
+  const canFilter = !!d.by_language;
+  const ps = d.period_langs;   // при выбранном периоде: { code: {positive, negative, total} }
+  const row = (name, l, cls = '', code = '') => {
+    const p = l.pct ?? pct(l.positive, l.negative);
+    const tag = code && canFilter && d.by_language[code] ? 'button' : 'div';
+    const sel = code && code === currentLang ? ' sel' : '';
+    return `<${tag} class="bar-row ${cls}${sel}" ${tag === 'button' ? `type="button" data-lang="${esc(code)}" aria-pressed="${sel ? 'true' : 'false'}"` : ''}
+      title="${esc(name)}: ${fmt(l.positive)} положит. / ${fmt(l.negative)} отрицат.${l.score_desc ? ' · ' + esc(l.score_desc) : ''}">
+      <span class="bar-label">${esc(name)}</span>
+      <span class="bar-track"><span class="bar-fill" style="width:${p ?? 0}%"></span></span>
+      <span class="bar-value">${p == null ? '—' : Math.round(p) + '%'}</span>
+      <span class="bar-count">${fmt(l.total)}</span></${tag}>`;
+  };
+  const list = d.languages.map(l => ps ? { ...l, ...(ps[l.code] || { positive: 0, negative: 0, total: 0 }), pct: null, score_desc: '' } : l)
+    .map(l => ({ ...l, pct: l.pct ?? pct(l.positive, l.negative) }));
+  let html = list.filter(l => l.total > 0 || l.code === currentLang)
+    .sort((a, b) => (b.pct ?? -1) - (a.pct ?? -1) || b.total - a.total)
+    .map(l => row(l.name, l, '', l.code)).join('');
+  const other = ps ? ps.__other : d.languages_other;
+  if (other && other.total) html += row('Прочие языки', other, 'other');
+  if (ps && !html) html = '<div class="empty-note">За выбранный период отзывов нет</div>';
+  html += `<p class="note" style="margin:10px 0 0">Зелёная часть полосы — положительные, оранжевая — отрицательные. Справа — число отзывов.</p>`;
+  const box = document.getElementById('langBars');
+  box.innerHTML = html;
+  box.classList.toggle('filtered', !!currentLang);
+  box.querySelectorAll('button.bar-row').forEach(b => b.addEventListener('click', () => {
+    applyFilters(b.dataset.lang === currentLang ? null : b.dataset.lang, currentPeriod);
+  }));
+}
+
+/* Облако тэгов + таблица */
+let tagPeriod = 'all', sortKey = 'total', sortDir = -1;
+function renderCloud(el, items, key) {
+  const list = items.filter(t => t[key] > 0).sort((a, b) => b[key] - a[key]);
+  if (!list.length) { el.innerHTML = '<div class="empty-note">Нет упоминаний</div>'; return; }
+  const max = list[0][key], min = list[list.length - 1][key];
+  const big = window.innerWidth < 560 ? 14 : 22;
+  const scale = v => max === min ? 12 + big : 12 + big * Math.sqrt((v - min) / (max - min));
+  el.innerHTML = list.map(t =>
+    `<span class="w" style="font-size:${scale(t[key]).toFixed(1)}px" title="${esc(t.name)}: ${fmt(t[key])} отзывов">${esc(t.name)}<sup>${fmt(t[key])}</sup></span>`).join('');
+}
+function renderTags(d) {
+  const src = d.period ? d.tags.all : (d.tags[tagPeriod] || []);
+  const items = src.map(t => ({ ...t, total: t.pos + t.neg, share: (t.pos + t.neg) ? 100 * t.neg / (t.pos + t.neg) : 0 }));
+  renderCloud(document.getElementById('cloudPos'), items, 'pos');
+  renderCloud(document.getElementById('cloudNeg'), items, 'neg');
+  const rows = items.filter(t => t.total > 0).sort((a, b) => {
+    const x = a[sortKey], y = b[sortKey];
+    return (typeof x === 'string' ? x.localeCompare(y, 'ru') : x - y) * sortDir || b.total - a.total;
+  });
+  document.querySelector('#tagTable tbody').innerHTML = rows.map(t => `<tr>
+    <td>${esc(t.name)}</td><td class="num">${fmt(t.pos)}</td><td class="num">${fmt(t.neg)}</td><td class="num">${fmt(t.total)}</td>
+    <td><div class="share"><div class="t"><div class="f" style="width:${t.share.toFixed(1)}%"></div></div><div class="v">${Math.round(t.share)}%</div></div></td></tr>`).join('')
+    || '<tr><td colspan="5" class="empty-note">Нет упоминаний</td></tr>';
+  document.querySelectorAll('#tagTable th').forEach(th => {
+    const a = th.querySelector('.arr'); if (a) a.remove();
+    if (th.dataset.k === sortKey) th.insertAdjacentHTML('beforeend', ` <span class="arr">${sortDir < 0 ? '▼' : '▲'}</span>`);
+  });
+}
+
+function reviewHtml(r, big) {
+  if (!r) return '<div class="empty-note">Нет отзывов</div>';
+  const c = r.positive ? 'var(--pos)' : 'var(--neg)';
+  return `<div class="review" style="--c:${c}">
+    <div class="meta"><span class="verdict">${r.positive ? 'Рекомендует' : 'Не рекомендует'}</span>
+      <b>${esc(r.author)}</b><span>${dateTime(r.created)}</span><span>${esc(r.language_ru || r.language)}</span>
+      <span>${String(r.playtime_h).replace('.', ',')} ч в игре</span>
+      ${r.votes_up ? `<span>Полезно: ${fmt(r.votes_up)}</span>` : ''}
+      ${r.free ? '<span class="badge">получил бесплатно</span>' : ''}</div>
+    ${r.text_ru ? `<div class="tr-label">Машинный перевод · оригинал: ${esc(r.language_ru || r.language)}</div>` : ''}
+    <div class="text">${esc(r.text_ru || r.text) || '<i>без текста</i>'}</div>
+    ${r.text_ru ? `<div class="orig" hidden>${esc(r.text)}</div>` : ''}
+    <div class="actions"><button class="more" type="button">Развернуть</button>${r.text_ru ? '<button class="show-orig" type="button">Показать оригинал</button>' : ''}<a href="${esc(r.url)}" target="_blank" rel="noopener">Открыть в Steam ↗</a></div>
+  </div>`;
+}
+function wireReviews(root) {
+  root.querySelectorAll('.review:not([data-wired])').forEach(el => {
+    el.dataset.wired = '1';
+    const so = el.querySelector('.show-orig'), o = el.querySelector('.orig');
+    if (so) so.addEventListener('click', () => { o.hidden = !o.hidden; so.textContent = o.hidden ? 'Показать оригинал' : 'Скрыть оригинал'; });
+    const t = el.querySelector('.text'), b = el.querySelector('.more');
+    if (t.scrollHeight <= t.clientHeight + 2) { b.remove(); return; }
+    b.addEventListener('click', () => { el.classList.toggle('open'); b.textContent = el.classList.contains('open') ? 'Свернуть' : 'Развернуть'; });
+  });
+}
+
+/* Перевод на лету для отзывов без готового перевода */
+const GL = { english:'en', german:'de', french:'fr', spanish:'es', latam:'es', portuguese:'pt', brazilian:'pt', polish:'pl',
+  turkish:'tr', italian:'it', schinese:'zh-CN', tchinese:'zh-TW', japanese:'ja', koreana:'ko', ukrainian:'uk', czech:'cs',
+  dutch:'nl', danish:'da', finnish:'fi', norwegian:'no', swedish:'sv', hungarian:'hu', romanian:'ro', thai:'th',
+  vietnamese:'vi', greek:'el', bulgarian:'bg', indonesian:'id', arabic:'ar' };
+const LANG_RU = { english:'Английский', russian:'Русский', french:'Французский', german:'Немецкий', japanese:'Японский',
+  spanish:'Испанский (Испания)', latam:'Испанский (Лат. Америка)', portuguese:'Португальский', brazilian:'Португальский (Бразилия)',
+  turkish:'Турецкий', tchinese:'Китайский (трад.)', schinese:'Китайский (упр.)', italian:'Итальянский', koreana:'Корейский',
+  polish:'Польский', ukrainian:'Украинский', czech:'Чешский', dutch:'Нидерландский', danish:'Датский', finnish:'Финский',
+  norwegian:'Норвежский', swedish:'Шведский', hungarian:'Венгерский', romanian:'Румынский', thai:'Тайский',
+  vietnamese:'Вьетнамский', greek:'Греческий', bulgarian:'Болгарский', indonesian:'Индонезийский', arabic:'Арабский' };
+const trCache = new Map();
+async function translateRu(text, lang) {
+  const key = lang + '|' + text;
+  if (trCache.has(key)) return trCache.get(key);
+  const p = (async () => {
+    const url = 'https://translate.googleapis.com/translate_a/single?client=gtx&dt=t&tl=ru&sl=' + (GL[lang] || 'auto') + '&q=' + encodeURIComponent(text.slice(0, 4500));
+    const r = await fetch(url); if (!r.ok) throw new Error(r.status);
+    const j = await r.json();
+    const out = (j[0] || []).map(x => x && x[0] || '').join('').trim();
+    return out && out.toLowerCase() !== text.trim().toLowerCase() ? out : null;
+  })().catch(() => null);
+  trCache.set(key, p);
+  return p;
+}
+function translateMissing(list, containerId, token) {
+  (list || []).forEach((r, i) => {
+    if (!r || r.text_ru || r.language === 'russian' || !/\p{L}/u.test(r.text || '')) return;
+    translateRu(r.text, r.language).then(tr => {
+      if (!tr || token !== renderToken) return;
+      r.text_ru = tr;
+      const root = document.getElementById(containerId);
+      const el = root && root.querySelectorAll('.review')[i];
+      if (!el) return;
+      el.outerHTML = reviewHtml(r);
+      wireReviews(root);
+    });
+  });
+}
+
+/* ---------- Упоминания других игр ---------- */
+const GW = '[\\p{L}\\p{N}_]', GB = `(?:(?<=${GW})(?!${GW})|(?<!${GW})(?=${GW}))`;
+let gameRx = null;
+function gameRegex(id) {
+  if (!gameRx) {
+    gameRx = {};
+    for (const g of (DATA.games_meta || [])) {
+      try { gameRx[g.id] = new RegExp(g.patterns.map(p => '(?:' + p.replaceAll('\\b', GB).replaceAll('\\w', GW) + ')').join('|'), 'iu'); }
+      catch (e) { /* паттерн, который JS не понимает, просто не подсвечиваем */ }
+    }
+  }
+  return gameRx[id];
+}
+function snippetFor(text, id, width = 420) {
+  const rx = gameRegex(id); text = text || '';
+  const m = rx && rx.exec(text);
+  if (!m || text.length <= width) return text;
+  let start = Math.max(0, m.index - Math.floor(width / 3));
+  if (start) { const sp = text.indexOf(' ', start); if (sp >= 0 && sp < m.index) start = sp + 1; }
+  let out = text.slice(start, start + width);
+  if (start + width < text.length) out = out.slice(0, out.lastIndexOf(' ')) + '…';
+  return (start ? '…' : '') + out;
+}
+function highlight(html, id) {
+  const rx = gameRegex(id); if (!rx) return html;
+  const g = new RegExp(rx.source, 'giu');
+  return html.replace(g, m => `<mark>${m}</mark>`);
+}
+let openGame = null;
+function renderGames(d) {
+  const box = document.getElementById('gamesList'), note = document.getElementById('gamesNote');
+  const G = d.games;
+  if (!G || !G.list) { box.innerHTML = '<div class="empty-note">Данных об упоминаниях пока нет — они появятся после следующего обновления.</div>'; note.textContent = ''; return; }
+  const top = G.list.filter(g => g.pos + g.neg > 0).slice(0, 5);
+  document.getElementById('gamesSub').textContent = (d.period ? 'за выбранный период · ' : '') + 'топ-5 игр по числу отзывов, где они упоминаются · нажмите на игру, чтобы увидеть примеры';
+  if (!top.length) { box.innerHTML = '<div class="empty-note">В выбранных отзывах другие игры не упоминаются</div>'; note.textContent = ''; return; }
+  if (!top.some(g => g.id === openGame)) openGame = null;
+  box.innerHTML = `<div class="games-head"><span>#</span><span>Игра</span><span class="h-bar">Доля упоминаний в положительных</span><span>%</span><span class="h-counts">Положит. / отрицат.</span><span>Отзывов</span></div>` +
+    top.map((g, i) => {
+      const t = g.pos + g.neg, p = 100 * g.pos / t, open = g.id === openGame;
+      return `<button type="button" class="game-row${open ? ' open' : ''}" data-game="${esc(g.id)}" aria-expanded="${open}">
+        <span class="rank">${i + 1}</span>
+        <span class="gname">${esc(g.name)}<span class="chev">›</span></span>
+        <span class="bar-track"><span class="bar-fill" style="width:${p.toFixed(1)}%"></span></span>
+        <span class="gpct">${Math.round(p)}%</span>
+        <span class="gcounts"><span style="color:var(--pos)">${fmt(g.pos)}</span> / <span style="color:var(--neg)">${fmt(g.neg)}</span></span>
+        <span class="gtotal">${fmt(t)}</span></button>
+        ${open ? `<div class="game-ex" id="gameEx"><p class="ex-note">Последние отзывы, где упоминается ${esc(g.name)}${d.period ? ' (за выбранный период)' : ''}:</p>${(G.examples?.[g.id] || []).map(r => reviewHtml(r)).join('') || '<div class="empty-note">Нет отзывов с текстом</div>'}</div>` : ''}`;
+    }).join('');
+  const gen = G.nfs_generic ? G.nfs_generic.pos + G.nfs_generic.neg : 0;
+  note.textContent = gen ? `Ещё ${fmt(gen)} отзывов упоминают Need for Speed без указания конкретной части — они не входят в топ.` : '';
+  box.querySelectorAll('.game-row').forEach(b => b.addEventListener('click', () => {
+    openGame = b.dataset.game === openGame ? null : b.dataset.game;
+    renderGames(d);
+  }));
+  const ex = document.getElementById('gameEx');
+  if (ex) {
+    ex.querySelectorAll('.review .text').forEach(t => { t.innerHTML = highlight(t.innerHTML, openGame); });
+    wireReviews(ex);
+    const list = G.examples?.[openGame] || [];
+    list.forEach((r, i) => {
+      if (r.text_ru || r.language === 'russian' || !/\p{L}/u.test(r.text || '')) return;
+      const gid = openGame;
+      translateRu(r.text, r.language).then(tr => {
+        if (!tr || openGame !== gid) return;
+        r.text_ru = tr;
+        const el = document.querySelectorAll('#gameEx .review')[i];
+        if (!el) return;
+        el.outerHTML = reviewHtml(r);
+        const fresh = document.querySelectorAll('#gameEx .review')[i];
+        if (fresh) fresh.querySelectorAll('.text, .orig').forEach(x => { x.innerHTML = highlight(x.innerHTML, gid); });
+        wireReviews(document.getElementById('gameEx'));
+      });
+    });
+  }
+}
+
+let renderToken = 0;
+function renderReviews(d) {
+  const token = ++renderToken;
+  const mh = d.most_helpful;
+  const top = document.getElementById('topReview');
+  top.innerHTML = mh ? `<div class="stats">${mini('Отметок «Полезно»', fmt(mh.votes_up))}${mini('Отметок «Забавно»', fmt(mh.votes_funny))}${mini('Оценка', mh.positive ? 'Рекомендует' : 'Не рекомендует')}</div>` + reviewHtml(mh, true) : reviewHtml(null);
+  document.getElementById('recentPos').innerHTML = (d.recent_positive || []).map(r => reviewHtml(r)).join('') || reviewHtml(null);
+  document.getElementById('recentNeg').innerHTML = (d.recent_negative || []).map(r => reviewHtml(r)).join('') || reviewHtml(null);
+  ['topReview', 'recentPos', 'recentNeg'].forEach(id => wireReviews(document.getElementById(id)));
+  translateMissing(d.recent_positive, 'recentPos', token);
+  translateMissing(d.recent_negative, 'recentNeg', token);
+}
+
+function renderMeta(d) {
+  const g = new Date(d.generated_at);
+  document.getElementById('updated').textContent = 'данные на ' + g.toLocaleString('ru-RU', { timeZone: 'Europe/Moscow', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }) + ' МСК';
+  if (d.app?.url) document.getElementById('storeLink').href = d.app.url;
+  document.getElementById('footer').innerHTML = `
+    <p>Источник: открытое API отзывов Steam (<code>appreviews/${d.app?.id}</code>). Учитываются все отзывы — купившие в Steam, активировавшие ключ и получившие игру бесплатно, поэтому общее число может немного отличаться от цифры на странице магазина (там по умолчанию показаны только покупки в Steam).
+    Рейтинг по языкам — по сводке Steam для каждого языка, на который локализована страница; остальные языки собраны в строку «Прочие языки».
+    При выборе языка все блоки пересчитываются только по отзывам, написанным на этом языке (это язык отзыва, а не страна игрока).
+    При выборе периода все цифры считаются по загруженным отзывам за эти даты (по московскому времени), поэтому могут немного расходиться со сводкой Steam.
+    Темы определяются по словарю ключевых слов на ${d.languages?.length || ''}+ языках (файл <code>scripts/tags.json</code>, его можно дополнять).
+    Загружено ${fmt(d.fetched?.count)} текстов отзывов (${pctTxt(d.fetched?.coverage)} от общего числа) — по ним считаются темы, динамика и бесплатные копии.</p>
+    <p>Дэшборд v1.7 · сборщик v${esc(d.version)}</p>`;
+}
+
+/* ---------- Период ---------- */
+const MSK = 3 * 3600;
+const isoOf = ts => new Date((ts + MSK) * 1000).toISOString().slice(0, 10);          // дата по МСК
+const tsOfIso = iso => Date.parse(iso + 'T00:00:00Z') / 1000 - MSK;                   // полночь МСК
+const ruDate = iso => iso ? iso.slice(8, 10) + '.' + iso.slice(5, 7) + '.' + iso.slice(0, 4) : '';
+function periodText(p) {
+  if (!p) return '';
+  if (p.from && p.to) return `${ruDate(p.from)} – ${ruDate(p.to)}`;
+  if (p.from) return `с ${ruDate(p.from)}`;
+  return `по ${ruDate(p.to)}`;
+}
+function parseRuDate(s) {
+  s = (s || '').trim();
+  if (!s) return { empty: true };
+  const m = s.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+  if (!m) return { error: 'Введите дату в формате дд.мм.гггг' };
+  const [_, dd, mm, yy] = m, iso = `${yy}-${mm}-${dd}`;
+  const dt = new Date(iso + 'T00:00:00Z');
+  if (isNaN(dt) || dt.toISOString().slice(0, 10) !== iso) return { error: `Такой даты нет: ${s}` };
+  return { iso };
+}
+function scoreDesc(p, n) {
+  const t = p + n; if (!t) return 'Нет отзывов';
+  if (t < 10) return `Мало отзывов (${t})`;
+  const r = p / t;
+  if (r >= 0.95 && t >= 500) return 'Крайне положительные';
+  if (r >= 0.8) return t >= 50 ? 'Очень положительные' : 'Положительные';
+  if (r >= 0.7) return 'В основном положительные';
+  if (r >= 0.4) return 'Смешанные';
+  if (r >= 0.2) return 'В основном отрицательные';
+  if (t >= 500) return 'Крайне отрицательные';
+  return t >= 50 ? 'Очень отрицательные' : 'Отрицательные';
+}
+
+/* Данные по каждому отзыву грузятся только при выборе периода */
+let IDX = null; const TXT = new Map();
+async function loadIndex() {
+  if (IDX) return IDX;
+  const r = await fetch('reviews/index.json?v=' + (DATA.generated_at || ''));
+  if (!r.ok) throw new Error('reviews/index.json: HTTP ' + r.status);
+  return IDX = await r.json();
+}
+async function loadTexts(months) {
+  await Promise.all([...new Set(months)].filter(m => !TXT.has(m)).map(async m => {
+    try { const r = await fetch(`reviews/text-${m}.json?v=` + (DATA.generated_at || '')); TXT.set(m, r.ok ? await r.json() : {}); }
+    catch (e) { TXT.set(m, {}); }
+  }));
+}
+const F = { id: 0, ts: 1, up: 2, lang: 3, free: 4, vu: 5, vf: 6, tags: 7, txt: 8, games: 9 };
+
+async function computePeriodSlice(lang, p) {
+  const ix = await loadIndex();
+  const langCode = i => ix.langs[i];
+  const from = p.from ? tsOfIso(p.from) : -Infinity;
+  const to = p.to ? tsOfIso(p.to) + 86400 - 1 : Infinity;
+  const all = ix.rows.filter(r => r[F.ts] >= from && r[F.ts] <= to);
+  const rows = lang ? all.filter(r => langCode(r[F.lang]) === lang) : all;
+  const posN = rows.filter(r => r[F.up]).length, negN = rows.length - posN;
+  const free = rows.filter(r => r[F.free]), freeP = free.filter(r => r[F.up]).length;
+
+  // рейтинг языков за период (по всем языкам, без языкового фильтра)
+  const localized = new Set(DATA.languages.map(l => l.code));
+  const pl = { __other: { positive: 0, negative: 0, total: 0 } };
+  for (const r of all) {
+    const c = langCode(r[F.lang]), k = localized.has(c) ? c : '__other';
+    pl[k] = pl[k] || { positive: 0, negative: 0, total: 0 };
+    pl[k][r[F.up] ? 'positive' : 'negative']++; pl[k].total++;
+  }
+
+  // ряды для графиков: по дням (≤ 90 дней) или по неделям
+  const fIso = p.from || (rows.length ? isoOf(Math.min(...rows.map(r => r[F.ts]))) : ix.first_date);
+  const tIso = p.to || isoOf(Date.now() / 1000);
+  const days = Math.round((Date.parse(tIso) - Date.parse(fIso)) / 864e5) + 1;
+  const weekly = days > 90;
+  const byDay = {};
+  for (const r of rows) { const k = isoOf(r[F.ts]); (byDay[k] = byDay[k] || [0, 0])[r[F.up] ? 0 : 1]++; }
+  const series = [];
+  for (let t = Date.parse(fIso); t <= Date.parse(tIso); t += 864e5) {
+    const k = new Date(t).toISOString().slice(0, 10), v = byDay[k] || [0, 0];
+    if (!weekly) { series.push({ date: k, label: dayLabel(k), pos: v[0], neg: v[1] }); continue; }
+    const last = series[series.length - 1];
+    const wd = (new Date(t).getUTCDay() + 6) % 7;   // 0 = понедельник
+    if (!last || wd === 0) series.push({ date: k, end: k, label: dayLabel(k), pos: v[0], neg: v[1] });
+    else { last.pos += v[0]; last.neg += v[1]; last.end = k; }
+  }
+  series.forEach(s => { if (s.end) s.title = `Неделя ${dayLabel(s.date)} – ${dayLabel(s.end)}`; });
+
+  // темы
+  const tags = ix.tags.map((t, i) => {
+    let pos = 0, neg = 0; const bit = 2 ** i;
+    for (const r of rows) if (Math.floor(r[F.tags] / bit) % 2) r[F.up] ? pos++ : neg++;
+    return { id: t.id, name: t.name, pos, neg };
+  });
+
+  // отзывы: самый полезный и последние (тексты подгружаются по месяцам)
+  const withText = rows.filter(r => r[F.txt]).sort((a, b) => b[F.ts] - a[F.ts]);
+  const mh = rows.length ? rows.reduce((a, b) => (b[F.vu] > a[F.vu] || (b[F.vu] === a[F.vu] && b[F.vf] > a[F.vf])) ? b : a) : null;
+  const rp = withText.filter(r => r[F.up]).slice(0, 10), rn = withText.filter(r => !r[F.up]).slice(0, 10);
+  const need = [...rp, ...rn, ...(mh ? [mh] : [])];
+  await loadTexts(need.map(r => isoOf(r[F.ts]).slice(0, 7)));
+  const cardOf = r => {
+    const t = (TXT.get(isoOf(r[F.ts]).slice(0, 7)) || {})[r[F.id]] || ['', '', '', 0];
+    const code = langCode(r[F.lang]);
+    return { id: r[F.id], positive: !!r[F.up], language: code, language_ru: LANG_RU[code] || code, text: t[0], created: r[F.ts],
+      votes_up: r[F.vu], votes_funny: r[F.vf], playtime_h: t[3], free: !!r[F.free], author: t[1],
+      url: `https://steamcommunity.com/profiles/${(BigInt(76561197960265728) + BigInt(parseInt(t[2] || '0', 36))).toString()}/recommended/${DATA.app?.id || 1114150}/` };
+  };
+  // упоминания игр за период
+  const GF = 9, nG = (ix.games || []).length;
+  const gcnt = (ix.games || []).map(() => [0, 0]); const ggen = [0, 0];
+  for (const r of rows) {
+    const m = r[GF] || 0; if (!m) continue;
+    for (let i = 0; i < nG; i++) if (Math.floor(m / 2 ** i) % 2) gcnt[i][r[F.up] ? 0 : 1]++;
+    if (Math.floor(m / 2 ** nG) % 2) ggen[r[F.up] ? 0 : 1]++;
+  }
+  const glist = (ix.games || []).map((g, i) => ({ id: g.id, name: g.name, pos: gcnt[i][0], neg: gcnt[i][1], bit: i }))
+    .sort((a, b) => (b.pos + b.neg) - (a.pos + a.neg));
+  const gex = {}, gneed = [];
+  for (const g of glist.slice(0, 5)) {
+    if (!(g.pos + g.neg)) continue;
+    gex[g.id] = withText.filter(r => Math.floor((r[GF] || 0) / 2 ** g.bit) % 2).slice(0, 5);
+    gneed.push(...gex[g.id]);
+  }
+  await loadTexts(gneed.map(r => isoOf(r[F.ts]).slice(0, 7)));
+  const gamesOut = { list: glist, nfs_generic: { pos: ggen[0], neg: ggen[1] }, examples: {} };
+  for (const id in gex) gamesOut.examples[id] = gex[id].map(r => { const c = cardOf(r); c.text = snippetFor(c.text, id); return c; });
+
+  return {
+    games: gamesOut,
+    period: { ...p, from: fIso, to: tIso, days, weekly },
+    summary: { total: rows.length, positive: posN, negative: negN, score_desc: scoreDesc(posN, negN), pct: pct(posN, negN) },
+    free: { total: free.length, positive: freeP, negative: free.length - freeP },
+    series, tags: { all: tags }, period_langs: pl,
+    most_helpful: mh ? cardOf(mh) : null,
+    recent_positive: rp.map(cardOf), recent_negative: rn.map(cardOf),
+    languages: DATA.languages, languages_other: DATA.languages_other, by_language: DATA.by_language,
+  };
+}
+
+/* ---------- Фильтры: язык + период ---------- */
+let DATA = null, currentLang = null, currentPeriod = null;
+const langName = code => (DATA.languages.find(l => l.code === code) || {}).name || code;
+function sliceOf(code) {
+  const s = code && DATA.by_language && DATA.by_language[code];
+  return s ? s : DATA;
+}
+function renderCards(d, langName) {
+  const s = d.summary, f = d.free;
+  const chips = (langName ? `<span class="scope">только ${esc(langName.toLowerCase())}</span>` : '')
+    + (d.period ? `<span class="scope">${esc(periodText(currentPeriod))}</span>` : '');
+  document.getElementById('statCards').innerHTML =
+    card('Всего отзывов' + chips, fmt(s.total), `${s.score_desc}${s.total ? ' · ' + pctTxt(s.pct) + ' положительных' : ''}`) +
+    card('Положительные' + chips, fmt(s.positive), s.total ? pctTxt(pct(s.positive, s.negative)) + ' от всех' : '—', 'var(--pos)') +
+    card('Отрицательные' + chips, fmt(s.negative), s.total ? pctTxt(pct(s.negative, s.positive)) + ' от всех' : '—', 'var(--neg)') +
+    card('Получили игру бесплатно' + chips, fmt(f.total),
+      `<span style="color:var(--pos)">${fmt(f.positive)} положит.</span> · <span style="color:var(--neg)">${fmt(f.negative)} отрицат.</span>`);
+  document.getElementById('cardsNote').hidden = !d.period;
+}
+function renderFilterBar(total) {
+  const bar = document.getElementById('filterBar');
+  const parts = [];
+  if (currentLang) parts.push(`<span class="chip">Язык: <b>${esc(langName(currentLang))}</b><button type="button" data-clear="lang" aria-label="Убрать фильтр по языку">×</button></span>`);
+  if (currentPeriod) parts.push(`<span class="chip">Период: <b>${esc(periodText(currentPeriod))}</b><button type="button" data-clear="period" aria-label="Убрать период">×</button></span>`);
+  if (!parts.length) { bar.hidden = true; bar.innerHTML = ''; return; }
+  bar.innerHTML = `<span>Показаны отзывы:</span>${parts.join('')}<span class="muted">всего: ${fmt(total)}</span><button type="button" id="resetAll">Сбросить фильтры</button>`;
+  bar.hidden = false;
+  bar.querySelectorAll('[data-clear]').forEach(b => b.addEventListener('click', () =>
+    b.dataset.clear === 'lang' ? applyFilters(null, currentPeriod) : resetPeriod()));
+  document.getElementById('resetAll').addEventListener('click', () => { fillPeriodInputs(null); applyFilters(null, null); });
+}
+async function renderAll() {
+  const token = ++filterToken;
+  let sl;
+  if (currentPeriod) {
+    setPeriodMsg('Загружаю отзывы за период…', 'info');
+    try { sl = await computePeriodSlice(currentLang, currentPeriod); }
+    catch (e) { setPeriodMsg('Не удалось загрузить отзывы за период: ' + e.message, 'err'); return; }
+    if (token !== filterToken) return;
+    setPeriodMsg('', '');
+  } else sl = sliceOf(currentLang);
+  lastSlice = sl;
+  const name = currentLang ? langName(currentLang) : null;
+  renderFilterBar(sl.summary.total);
+  renderCards(sl, name); renderPeriods(sl); renderLangs(sl.period ? sl : DATA); renderTags(sl); renderGames(sl); renderReviews(sl);
+  document.getElementById('periodReset').disabled = !currentPeriod;
+}
+let filterToken = 0, lastSlice = null;
+function hashOf(lang, p) {
+  if (!p) return lang || '';
+  return `${lang || 'all'}~${p.from || ''}~${p.to || ''}`;
+}
+function applyFilters(lang, period, fromHash) {
+  currentLang = lang && DATA.by_language && DATA.by_language[lang] ? lang : null;
+  currentPeriod = period && (period.from || period.to) ? period : null;
+  if (!fromHash) {
+    const h = hashOf(currentLang, currentPeriod);
+    try { history.replaceState(null, '', h ? '#' + h : location.pathname + location.search); } catch (e) { location.hash = h; }
+  }
+  renderAll();
+}
+function parseHash() {
+  const h = decodeURIComponent((location.hash || '').replace('#', ''));
+  if (!h) return [null, null];
+  const [lang, from, to] = h.split('~');
+  const ok = s => /^\d{4}-\d{2}-\d{2}$/.test(s || '') ? s : null;
+  const p = (from !== undefined) ? { from: ok(from), to: ok(to) } : null;
+  return [lang && lang !== 'all' ? lang : null, p && (p.from || p.to) ? p : null];
+}
+
+/* Поля ввода дат */
+function setPeriodMsg(text, kind) {
+  const m = document.getElementById('periodMsg');
+  m.textContent = text; m.className = 'period-msg ' + (kind || ''); m.hidden = !text;
+}
+function fillPeriodInputs(p) {
+  document.getElementById('dateFrom').value = p && p.from ? ruDate(p.from) : '';
+  document.getElementById('dateTo').value = p && p.to ? ruDate(p.to) : '';
+}
+function maskDate(el) {
+  el.addEventListener('input', () => {
+    const digits = el.value.replace(/\D/g, '').slice(0, 8);
+    let out = digits.slice(0, 2);
+    if (digits.length > 2) out += '.' + digits.slice(2, 4);
+    if (digits.length > 4) out += '.' + digits.slice(4);
+    el.value = out;
+    el.classList.remove('bad');
+  });
+  el.addEventListener('keydown', e => { if (e.key === 'Enter') submitPeriod(); });
+}
+function submitPeriod() {
+  const fe = document.getElementById('dateFrom'), te = document.getElementById('dateTo');
+  const a = parseRuDate(fe.value), b = parseRuDate(te.value);
+  fe.classList.toggle('bad', !!a.error); te.classList.toggle('bad', !!b.error);
+  if (a.error || b.error) return setPeriodMsg(a.error || b.error, 'err');
+  if (a.empty && b.empty) return setPeriodMsg('Укажите хотя бы одну дату: «с» или «по»', 'err');
+  const today = isoOf(Date.now() / 1000), first = DATA.first_review_date || '2024-08-29';
+  if (a.iso && b.iso && a.iso > b.iso) { fe.classList.add('bad'); te.classList.add('bad'); return setPeriodMsg('Дата «с» позже даты «по»', 'err'); }
+  if (a.iso && a.iso > today) { fe.classList.add('bad'); return setPeriodMsg('Дата «с» ещё не наступила', 'err'); }
+  if (b.iso && b.iso < first) { te.classList.add('bad'); return setPeriodMsg(`Отзывы есть только с ${ruDate(first)}`, 'err'); }
+  setPeriodMsg('', '');
+  applyFilters(currentLang, { from: a.iso || null, to: b.iso || null });
+}
+function resetPeriod() {
+  fillPeriodInputs(null);
+  document.querySelectorAll('#periodPanel input').forEach(i => i.classList.remove('bad'));
+  setPeriodMsg('', '');
+  applyFilters(currentLang, null);
+}
+
+loadData().then(d => {
+  DATA = d;
+  renderMeta(d);
+  document.getElementById('periodRange').textContent =
+    `Доступны даты с ${ruDate(d.first_review_date || '2024-08-29')} по ${ruDate(isoOf(Date.now() / 1000))}. Если указать только одну дату, вторая граница — начало или конец всех данных.`;
+  maskDate(document.getElementById('dateFrom')); maskDate(document.getElementById('dateTo'));
+  document.getElementById('periodApply').addEventListener('click', submitPeriod);
+  document.getElementById('periodReset').addEventListener('click', resetPeriod);
+  const [l, p] = parseHash(); fillPeriodInputs(p);
+  applyFilters(l, p, true);
+  window.addEventListener('hashchange', () => { const [l2, p2] = parseHash(); fillPeriodInputs(p2); applyFilters(l2, p2, true); });
+  document.querySelectorAll('#tagPeriod button').forEach(b => b.addEventListener('click', () => {
+    tagPeriod = b.dataset.p;
+    document.querySelectorAll('#tagPeriod button').forEach(x => x.classList.toggle('on', x === b));
+    renderTags(lastSlice || sliceOf(currentLang));
+  }));
+  document.querySelectorAll('#tagTable th').forEach(th => th.addEventListener('click', async () => {
+    const k = th.dataset.k;
+    if (sortKey === k) sortDir = -sortDir; else { sortKey = k; sortDir = k === 'name' ? 1 : -1; }
+    renderTags(lastSlice || sliceOf(currentLang));
+  }));
+}).catch(e => {
+  document.getElementById('app').innerHTML = `<div class="err">Не удалось загрузить данные: ${esc(e.message)}.<br>Если вы открыли файл локально, запустите <code>python -m http.server</code> в папке <code>docs</code> или откройте опубликованную страницу GitHub Pages.</div>`;
+});
+
+/* ================== Вкладки: Steam / PlayStation / Xbox (v1.7) ================== */
+const TABS = ['steam', 'ps', 'xbox'];
+let currentTab = 'steam', steamHash = '';
+function tabFromHash() {
+  const h = (location.hash || '').replace('#', '');
+  if (h === 'ps' || h.startsWith('ps~')) return 'ps';
+  if (h === 'xbox' || h.startsWith('xbox~')) return 'xbox';
+  return 'steam';
+}
+function showTab(tab, fromHash) {
+  if (!TABS.includes(tab)) tab = 'steam';
+  if (currentTab === 'steam' && tab !== 'steam') steamHash = location.hash;
+  currentTab = tab;
+  document.getElementById('app').hidden = tab !== 'steam';
+  document.getElementById('footer').hidden = tab !== 'steam';
+  document.getElementById('psApp').hidden = tab !== 'ps';
+  document.getElementById('xbApp').hidden = tab !== 'xbox';
+  document.querySelectorAll('.tabs button').forEach(b => {
+    const on = b.dataset.tab === tab;
+    b.classList.toggle('on', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); b.tabIndex = on ? 0 : -1;
+  });
+  if (!fromHash) {
+    let h = tab === 'steam' ? steamHash : tab === 'ps' ? '#ps' : '#' + xbHash();
+    try { history.replaceState(null, '', h && h !== '#' ? h : location.pathname + location.search); } catch (e) { location.hash = h; }
+  }
+  if (tab === 'ps') loadPS();
+  if (tab === 'xbox') loadXbox();
+  if (tab === 'steam' && charts.weekChart) Object.values(charts).forEach(ch => ch && ch.resize && ch.resize());
+}
+function initTabs() {
+  const bar = document.querySelector('.tabs');
+  bar.querySelectorAll('button').forEach(b => b.addEventListener('click', () => showTab(b.dataset.tab)));
+  bar.addEventListener('keydown', e => {
+    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+    const i = TABS.indexOf(currentTab), n = TABS[(i + (e.key === 'ArrowRight' ? 1 : TABS.length - 1)) % TABS.length];
+    showTab(n); bar.querySelector(`[data-tab="${n}"]`).focus();
+  });
+  showTab(tabFromHash(), true);
+  window.addEventListener('hashchange', () => { const t = tabFromHash(); if (t !== currentTab) showTab(t, true); else if (t === 'xbox') { xbParseHash(); xbRender(); } });
+}
+
+/* ---------- общие помощники для консолей ---------- */
+const STAR = n => '★'.repeat(n) + '☆'.repeat(5 - n);
+const starClass = s => s >= 4 ? 'pos' : s <= 2 ? 'neg' : 'neu';
+const avgTxt = v => v == null || isNaN(v) ? '—' : v.toFixed(2).replace('.', ',');
+async function fetchJson(path) {
+  const r = await fetch(path + '?v=' + Date.now());
+  if (!r.ok) throw new Error(path + ': HTTP ' + r.status);
+  return r.json();
+}
+function starBars(dist, total) {
+  // dist: {5: %, 4: %, ...}
+  return [5, 4, 3, 2, 1].map(s => {
+    const p = +(dist[s] ?? dist[String(s)] ?? 0);
+    return `<div class="star-row"><span class="star-label">${s} ★</span>
+      <span class="bar-track"><span class="bar-fill ${starClass(s)}" style="width:${p}%"></span></span>
+      <span class="star-val">${p.toFixed(0)}%</span>${total != null ? `<span class="star-cnt">${fmt(Math.round(total * p / 100))}</span>` : ''}</div>`;
+  }).join('');
+}
+
+/* ================== PlayStation ================== */
+let PS = null;
+async function loadPS() {
+  const box = document.getElementById('psApp');
+  if (PS) return renderPS();
+  try { PS = await fetchJson('consoles/playstation.json'); renderPS(); }
+  catch (e) { box.innerHTML = `<div class="err">Данных PlayStation пока нет: ${esc(e.message)}. Они появятся после ближайшего запуска обновления (GitHub Actions), если PS Store отдаст страницу игры.</div>`; }
+}
+function renderPS() {
+  const c = PS.current || {}, d = c.dist || {}, hist = (PS.history || []).filter(h => h.count);
+  const pos = (+(d[5] || 0)) + (+(d[4] || 0)), neg = (+(d[2] || 0)) + (+(d[1] || 0)), neu = +(d[3] || 0);
+  document.getElementById('psCards').innerHTML =
+    card('Средняя оценка', `${avgTxt(c.avg)} <span class="mini-sub">из 5</span>`, `на ${ruDate(c.date)}`) +
+    card('Всего оценок', fmt(c.count), 'текстовых отзывов в PS Store нет') +
+    card('Положительные (4–5 ★)', pctTxt(pos), `≈ ${fmt(Math.round(c.count * pos / 100))} оценок`, 'var(--pos)') +
+    card('Нейтральные (3 ★)', pctTxt(neu), `≈ ${fmt(Math.round(c.count * neu / 100))} оценок`, 'var(--neu)') +
+    card('Отрицательные (1–2 ★)', pctTxt(neg), `≈ ${fmt(Math.round(c.count * neg / 100))} оценок`, 'var(--neg)');
+  document.getElementById('psStars').innerHTML = starBars(d, c.count);
+  const note = document.getElementById('psHistNote');
+  if (hist.length < 2) {
+    note.textContent = `Магазин не показывает даты оценок, поэтому динамику дэшборд собирает сам: каждый день сохраняет снимок. Первый снимок — ${ruDate(hist[0]?.date || c.date)}; графики появятся со второго дня.`;
+    document.getElementById('psCharts').hidden = true;
+  } else {
+    note.textContent = `Ежедневные снимки с ${ruDate(hist[0].date)}. «Новых оценок» — разница между соседними снимками.`;
+    document.getElementById('psCharts').hidden = false;
+    const last = hist.slice(-60);
+    const rows = last.map((h, i) => ({ date: h.date, label: dayLabel(h.date), v: i ? Math.max(0, h.count - last[i - 1].count) : null, avg: h.avg }));
+    simpleChart('psNewChart', 'bar', rows.slice(1), r => r.v, 'Новых оценок', css('--accent'));
+    simpleChart('psAvgChart', 'line', rows, r => r.avg, 'Средняя оценка', css('--pos'), { min: 1, max: 5 });
+  }
+  document.getElementById('psMeta').innerHTML = `Источник: <a href="${esc(PS.store_url)}" target="_blank" rel="noopener">страница игры в PlayStation Store ↗</a> (PS5, регион US). Обновлено ${esc(new Date(PS.generated_at).toLocaleString('ru-RU', { timeZone: 'Europe/Moscow', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }))} МСК. Оценка в PS Store общая для всех стран и языков. Сборщик консолей v${esc(PS.version || '')}.`;
+}
+function simpleChart(id, type, rows, get, label, color, yr) {
+  const grid = css('--grid'), muted = css('--text-muted');
+  if (charts[id]) { charts[id].destroy(); delete charts[id]; }
+  charts[id] = new Chart(document.getElementById(id), {
+    type, data: { labels: rows.map(r => r.label), datasets: [{ label, data: rows.map(get), backgroundColor: color, borderColor: color,
+      borderRadius: type === 'bar' ? 4 : 0, borderWidth: type === 'line' ? 2 : 0, pointRadius: rows.length > 40 ? 0 : 3, tension: 0.25, maxBarThickness: 34 }] },
+    options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, plugins: { legend: { display: false } },
+      scales: { x: { grid: { display: false }, ticks: { color: muted, maxRotation: 0, autoSkipPadding: 8, font: { size: 11 } } },
+        y: { ...(yr || { beginAtZero: true }), grid: { color: grid }, border: { display: false }, ticks: { color: muted, precision: type === 'bar' ? 0 : 2, font: { size: 11 } } } } }
+  });
+}
+
+/* ================== Xbox ================== */
+let XB = null, xbMarket = null, xbPeriod = null, xbOpenGame = null, xbTagSort = 'total';
+const XF = { id: 0, ts: 1, stars: 2, market: 3, hp: 4, hn: 5, tags: 6, games: 7, txt: 8 };
+function xbHash() {
+  if (!xbMarket && !xbPeriod) return 'xbox';
+  return `xbox~${xbMarket || 'all'}~${xbPeriod?.from || ''}~${xbPeriod?.to || ''}`;
+}
+function xbParseHash() {
+  const h = decodeURIComponent((location.hash || '').replace('#', ''));
+  if (!h.startsWith('xbox~')) { xbMarket = null; xbPeriod = null; return; }
+  const [, m, f, t] = h.split('~');
+  const ok = s => /^\d{4}-\d{2}-\d{2}$/.test(s || '') ? s : null;
+  xbMarket = m && m !== 'all' ? m : null;
+  xbPeriod = ok(f) || ok(t) ? { from: ok(f), to: ok(t) } : null;
+}
+function xbSetFilters(m, p) {
+  xbMarket = m || null; xbPeriod = p && (p.from || p.to) ? p : null;
+  try { history.replaceState(null, '', '#' + xbHash()); } catch (e) { location.hash = xbHash(); }
+  xbRender();
+}
+async function loadXbox() {
+  const box = document.getElementById('xbApp');
+  if (XB) { xbParseHash(); return xbRender(); }
+  try {
+    XB = await fetchJson('consoles/xbox.json');
+    xbParseHash();
+    xbInitControls();
+    xbRender();
+  } catch (e) { box.innerHTML = `<div class="err">Данных Xbox пока нет: ${esc(e.message)}. Они появятся после ближайшего запуска обновления (GitHub Actions).</div>`; }
+}
+function xbInitControls() {
+  ['xbDateFrom', 'xbDateTo'].forEach(id => maskDate(document.getElementById(id)));
+  const submit = () => {
+    const fe = document.getElementById('xbDateFrom'), te = document.getElementById('xbDateTo');
+    const a = parseRuDate(fe.value), b = parseRuDate(te.value), msg = document.getElementById('xbPeriodMsg');
+    const err = t => { msg.textContent = t; msg.className = 'period-msg err'; msg.hidden = false; };
+    fe.classList.toggle('bad', !!a.error); te.classList.toggle('bad', !!b.error);
+    if (a.error || b.error) return err(a.error || b.error);
+    if (a.empty && b.empty) return err('Укажите хотя бы одну дату: «с» или «по»');
+    if (a.iso && b.iso && a.iso > b.iso) return err('Дата «с» позже даты «по»');
+    msg.hidden = true;
+    xbSetFilters(xbMarket, { from: a.iso || null, to: b.iso || null });
+  };
+  // maskDate вешает Enter на общую submitPeriod (Steam) — для Xbox перехватываем
+  ['xbDateFrom', 'xbDateTo'].forEach(id => document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter') { e.stopImmediatePropagation(); submit(); } }, true));
+  document.getElementById('xbPeriodApply').addEventListener('click', submit);
+  document.getElementById('xbPeriodReset').addEventListener('click', () => {
+    document.getElementById('xbDateFrom').value = ''; document.getElementById('xbDateTo').value = '';
+    document.getElementById('xbPeriodMsg').hidden = true; xbSetFilters(xbMarket, null);
+  });
+  document.querySelectorAll('#xbTagTable th').forEach(th => th.addEventListener('click', () => { xbTagSort = th.dataset.k; xbRender(); }));
+}
+function xbRowsFiltered(withMarket = true) {
+  const from = xbPeriod?.from ? tsOfIso(xbPeriod.from) : -Infinity, to = xbPeriod?.to ? tsOfIso(xbPeriod.to) + 86399 : Infinity;
+  const mi = xbMarket ? XB.markets.findIndex(m => m.code === xbMarket) : -1;
+  return XB.rows.filter(r => r[XF.ts] >= from && r[XF.ts] <= to && (!withMarket || mi < 0 || r[XF.market] === mi));
+}
+function xbCard(r) {
+  const m = XB.markets[r[XF.market]] || {}, t = XB.texts[r[XF.id]] || ['', ''];
+  return { id: r[XF.id], stars: r[XF.stars], positive: r[XF.stars] >= 4, language: 'xbox', language_ru: m.name, market: m.name,
+    text: t[0], author: t[1] || 'Игрок Xbox', created: r[XF.ts], votes_up: r[XF.hp],
+    url: (XB.store_url_tpl || '').replace('{locale}', m.locale || 'en-US') };
+}
+function xbReviewHtml(r) {
+  if (!r) return '<div class="empty-note">Нет отзывов</div>';
+  const cls = starClass(r.stars), col = cls === 'pos' ? 'var(--pos)' : cls === 'neg' ? 'var(--neg)' : 'var(--neu)';
+  return `<div class="review" style="--c:${col}">
+    <div class="meta"><span class="verdict stars-${cls}" title="${r.stars} из 5">${STAR(r.stars)}</span>
+      <b>${esc(r.author)}</b><span>${dateTime(r.created)}</span><span>${esc(r.market)}</span>
+      ${r.votes_up ? `<span>Полезно: ${fmt(r.votes_up)}</span>` : ''}</div>
+    ${r.text_ru ? `<div class="tr-label">Машинный перевод</div>` : ''}
+    <div class="text">${esc(r.text_ru || r.text) || '<i>без текста</i>'}</div>
+    ${r.text_ru ? `<div class="orig" hidden>${esc(r.text)}</div>` : ''}
+    <div class="actions"><button class="more" type="button">Развернуть</button>${r.text_ru ? '<button class="show-orig" type="button">Показать оригинал</button>' : ''}<a href="${esc(r.url)}" target="_blank" rel="noopener">Страница в Xbox Store ↗</a></div>
+  </div>`;
+}
+function xbList(containerId, list, hl) {
+  const root = document.getElementById(containerId);
+  root.innerHTML = list.length ? list.map(xbReviewHtml).join('') : xbReviewHtml(null);
+  if (hl) root.querySelectorAll('.text').forEach(t => { t.innerHTML = xbHighlight(t.innerHTML, hl); });
+  wireReviews(root);
+  list.forEach((r, i) => {
+    if (r.text_ru || !/\p{L}/u.test(r.text || '')) return;
+    translateRu(r.text, 'auto').then(tr => {
+      if (!tr || !document.getElementById(containerId).contains(root.querySelectorAll('.review')[i])) return;
+      r.text_ru = tr;
+      const el = root.querySelectorAll('.review')[i]; if (!el) return;
+      el.outerHTML = xbReviewHtml(r);
+      const fresh = root.querySelectorAll('.review')[i];
+      if (hl && fresh) fresh.querySelectorAll('.text, .orig').forEach(x => { x.innerHTML = xbHighlight(x.innerHTML, hl); });
+      wireReviews(root);
+    });
+  });
+}
+let xbGameRx = null;
+function xbHighlight(html, gid) {
+  if (!xbGameRx) {
+    xbGameRx = {};
+    for (const g of (XB.games || [])) {
+      try { xbGameRx[g.id] = new RegExp(g.patterns.map(p => '(?:' + p.replaceAll('\\b', GB).replaceAll('\\w', GW) + ')').join('|'), 'giu'); } catch (e) {}
+    }
+  }
+  const rx = xbGameRx[gid]; if (!rx) return html; rx.lastIndex = 0;
+  return html.replace(rx, m => `<mark>${m}</mark>`);
+}
+function xbSeries(rows, fromIso, toIso) {
+  const days = Math.round((Date.parse(toIso) - Date.parse(fromIso)) / 864e5) + 1, weekly = days > 90;
+  const by = {};
+  for (const r of rows) { const k = isoOf(r[XF.ts]); (by[k] = by[k] || [0, 0, 0])[r[XF.stars] >= 4 ? 0 : r[XF.stars] <= 2 ? 2 : 1]++; }
+  const out = [];
+  for (let t = Date.parse(fromIso); t <= Date.parse(toIso); t += 864e5) {
+    const k = new Date(t).toISOString().slice(0, 10), v = by[k] || [0, 0, 0];
+    const wd = (new Date(t).getUTCDay() + 6) % 7, last = out[out.length - 1];
+    if (!weekly || !last || wd === 0) out.push({ date: k, end: k, label: dayLabel(k), pos: v[0], neu: v[1], neg: v[2] });
+    else { last.pos += v[0]; last.neu += v[1]; last.neg += v[2]; last.end = k; }
+  }
+  if (weekly) out.forEach(s => { s.title = `Неделя ${dayLabel(s.date)} – ${dayLabel(s.end)}`; });
+  return { series: out, days, weekly };
+}
+function xbStacked(id, rows) {
+  const grid = css('--grid'), muted = css('--text-muted');
+  if (charts[id]) { charts[id].destroy(); delete charts[id]; }
+  const ds = (label, key, color) => ({ label, data: rows.map(r => r[key]), backgroundColor: color, borderRadius: 4, borderSkipped: false, borderWidth: { top: 2 }, borderColor: css('--surface'), maxBarThickness: 34 });
+  charts[id] = new Chart(document.getElementById(id), {
+    type: 'bar', data: { labels: rows.map(r => r.label), datasets: [ds('4–5 ★', 'pos', css('--pos')), ds('3 ★', 'neu', css('--neu')), ds('1–2 ★', 'neg', css('--neg'))] },
+    options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
+      plugins: { legend: { display: false }, tooltip: { callbacks: { title: it => rows[it[0].dataIndex].title || it[0].label,
+        footer: it => { const r = rows[it[0].dataIndex], t = r.pos + r.neu + r.neg; return t ? `Всего: ${t}` : 'Нет отзывов'; } } } },
+      scales: { x: { stacked: true, grid: { display: false }, ticks: { color: muted, maxRotation: 0, autoSkipPadding: 8, font: { size: 11 } } },
+        y: { stacked: true, beginAtZero: true, grid: { color: grid }, border: { display: false }, ticks: { color: muted, precision: 0, font: { size: 11 } } } } }
+  });
+}
+function xbRender() {
+  if (!XB) return;
+  const rows = xbRowsFiltered(), allMarketRows = xbRowsFiltered(false);
+  const mk = xbMarket ? XB.markets.find(m => m.code === xbMarket) : null;
+  const n = rows.length, pos = rows.filter(r => r[XF.stars] >= 4).length, neg = rows.filter(r => r[XF.stars] <= 2).length, neu = n - pos - neg;
+  // плашка фильтров
+  const bar = document.getElementById('xbFilterBar'), chips = [];
+  if (mk) chips.push(`<span class="chip">Страна: <b>${esc(mk.name)}</b><button type="button" data-x="m" aria-label="Убрать страну">×</button></span>`);
+  if (xbPeriod) chips.push(`<span class="chip">Период: <b>${esc(periodText(xbPeriod))}</b><button type="button" data-x="p" aria-label="Убрать период">×</button></span>`);
+  bar.hidden = !chips.length;
+  bar.innerHTML = chips.length ? `<span>Показаны отзывы:</span>${chips.join('')}<span class="muted">текстовых отзывов: ${fmt(n)}</span><button type="button" id="xbReset">Сбросить фильтры</button>` : '';
+  bar.querySelectorAll('[data-x]').forEach(b => b.addEventListener('click', () => b.dataset.x === 'm' ? xbSetFilters(null, xbPeriod) : (document.getElementById('xbPeriodReset').click())));
+  const rb = document.getElementById('xbReset'); if (rb) rb.addEventListener('click', () => { document.getElementById('xbDateFrom').value = ''; document.getElementById('xbDateTo').value = ''; xbSetFilters(null, null); });
+  document.getElementById('xbPeriodReset').disabled = !xbPeriod;
+  if (xbPeriod) { document.getElementById('xbDateFrom').value = ruDate(xbPeriod.from || ''); document.getElementById('xbDateTo').value = ruDate(xbPeriod.to || ''); }
+
+  // карточки
+  const ratCount = mk ? mk.count : XB.summary.count, ratAvg = mk ? mk.avg : XB.summary.avg;
+  const scope = (mk ? `<span class="scope">${esc(mk.name)}</span>` : '') + (xbPeriod ? `<span class="scope">${esc(periodText(xbPeriod))}</span>` : '');
+  document.getElementById('xbCards').innerHTML =
+    card('Оценок в магазине' + (mk ? `<span class="scope">${esc(mk.name)}</span>` : ''), fmt(ratCount), `средняя ${avgTxt(ratAvg)} из 5 · за всё время`) +
+    card('Текстовых отзывов' + scope, fmt(n), xbPeriod ? 'за выбранный период' : 'за всё время') +
+    card('Положительные (4–5 ★)' + scope, fmt(pos), n ? pctTxt(100 * pos / n) + ' от отзывов' : '—', 'var(--pos)') +
+    card('Нейтральные (3 ★)' + scope, fmt(neu), n ? pctTxt(100 * neu / n) + ' от отзывов' : '—', 'var(--neu)') +
+    card('Отрицательные (1–2 ★)' + scope, fmt(neg), n ? pctTxt(100 * neg / n) + ' от отзывов' : '—', 'var(--neg)');
+
+  // динамика
+  const today = isoOf(Date.now() / 1000);
+  let s1, s2;
+  if (xbPeriod) {
+    const f = xbPeriod.from || (rows.length ? isoOf(Math.min(...rows.map(r => r[XF.ts]))) : today);
+    const S = xbSeries(rows, f, xbPeriod.to || today); s1 = s2 = S;
+    document.getElementById('xbWeekTitle').innerHTML = `Отзывы за период по ${S.weekly ? 'неделям' : 'дням'} <span class="sub">${esc(periodText(xbPeriod))}, МСК</span>`;
+    document.getElementById('xbMonthPanel').hidden = true;
+  } else {
+    s1 = xbSeries(rows, isoOf(Date.now() / 1000 - 6 * 86400), today);
+    s2 = xbSeries(rows, isoOf(Date.now() / 1000 - 29 * 86400), today);
+    document.getElementById('xbWeekTitle').innerHTML = 'Новые отзывы по дням <span class="sub">последние 7 дней, МСК</span>';
+    document.getElementById('xbMonthPanel').hidden = false;
+  }
+  const sum = a => a.reduce((x, r) => x + r.pos + r.neu + r.neg, 0);
+  document.getElementById('xbWeekCards').innerHTML = xbPeriod
+    ? mini('За период', fmt(sum(s1.series))) + mini('В среднем в день', (sum(s1.series) / s1.days).toFixed(1).replace('.', ',')) + mini('Дней в периоде', fmt(s1.days))
+    : mini('За 7 дней', fmt(sum(s1.series))) + mini('За 30 дней', fmt(sum(s2.series))) + mini('В среднем в день (30 дн.)', (sum(s2.series) / 30).toFixed(1).replace('.', ','));
+  xbStacked('xbWeekChart', s1.series);
+  if (!xbPeriod) xbStacked('xbMonthChart', s2.series);
+
+  // страны
+  const stats = XB.markets.map((m, i) => {
+    const rr = allMarketRows.filter(r => r[XF.market] === i);
+    const p = rr.filter(r => r[XF.stars] >= 4).length, g = rr.filter(r => r[XF.stars] <= 2).length;
+    return { ...m, i, n: rr.length, p, g };
+  }).filter(m => m.count > 0 || m.n > 0 || m.code === xbMarket)
+    .sort((a, b) => (b.avg || 0) - (a.avg || 0) || b.count - a.count);
+  document.getElementById('xbMarkets').innerHTML = `<div class="mk-head"><span>Страна</span><span>Средняя</span><span>Оценок</span><span class="h-bar">Отзывы: доля 4–5 ★</span><span>Отзывов</span></div>` +
+    stats.map(m => `<button type="button" class="mk-row${m.code === xbMarket ? ' sel' : ''}" data-m="${esc(m.code)}" aria-pressed="${m.code === xbMarket}">
+      <span class="mk-name">${esc(m.name)}</span><span class="mk-avg">${m.count ? avgTxt(m.avg) : '—'}</span><span class="mk-cnt">${fmt(m.count)}</span>
+      <span class="bar-track" title="${m.n ? `${m.p} положит. · ${m.n - m.p - m.g} нейтр. · ${m.g} отрицат.` : 'нет текстовых отзывов'}">${m.n ? `<span class="bar-fill" style="width:${100 * m.p / m.n}%"></span><span class="bar-fill neu" style="width:${100 * (m.n - m.p - m.g) / m.n}%"></span>` : ''}</span>
+      <span class="mk-n">${fmt(m.n)}</span></button>`).join('');
+  document.getElementById('xbMarkets').classList.toggle('filtered', !!xbMarket);
+  document.querySelectorAll('#xbMarkets .mk-row').forEach(b => b.addEventListener('click', () => xbSetFilters(b.dataset.m === xbMarket ? null : b.dataset.m, xbPeriod)));
+
+  // распределение звёзд в текстовых отзывах
+  const dist = {}; for (let s = 1; s <= 5; s++) dist[s] = n ? 100 * rows.filter(r => r[XF.stars] === s).length / n : 0;
+  document.getElementById('xbStars').innerHTML = starBars(dist, n);
+
+  // темы
+  const tags = XB.tags.map((t, i) => {
+    let p = 0, z = 0, g = 0; const bit = 2 ** i;
+    for (const r of rows) if (Math.floor(r[XF.tags] / bit) % 2) { r[XF.stars] >= 4 ? p++ : r[XF.stars] <= 2 ? g++ : z++; }
+    return { name: t.name, pos: p, neu: z, neg: g, total: p + z + g, share: (p + z + g) ? 100 * g / (p + z + g) : 0 };
+  }).filter(t => t.total);
+  const cloud = (el, key) => {
+    const list = tags.filter(t => t[key] > 0).sort((a, b) => b[key] - a[key]);
+    if (!list.length) { el.innerHTML = '<div class="empty-note">Нет упоминаний</div>'; return; }
+    const max = list[0][key], min = list[list.length - 1][key], big = window.innerWidth < 560 ? 14 : 22;
+    el.innerHTML = list.map(t => `<span class="w" style="font-size:${(max === min ? 12 + big : 12 + big * Math.sqrt((t[key] - min) / (max - min))).toFixed(1)}px" title="${esc(t.name)}: ${fmt(t[key])}">${esc(t.name)}<sup>${fmt(t[key])}</sup></span>`).join('');
+  };
+  cloud(document.getElementById('xbCloudPos'), 'pos'); cloud(document.getElementById('xbCloudNeg'), 'neg');
+  const sk = xbTagSort;
+  document.querySelector('#xbTagTable tbody').innerHTML = tags.sort((a, b) => sk === 'name' ? a.name.localeCompare(b.name, 'ru') : (b[sk] - a[sk]) || b.total - a.total)
+    .map(t => `<tr><td>${esc(t.name)}</td><td class="num">${fmt(t.pos)}</td><td class="num">${fmt(t.neu)}</td><td class="num">${fmt(t.neg)}</td><td class="num">${fmt(t.total)}</td>
+      <td><div class="share"><div class="t"><div class="f" style="width:${t.share.toFixed(1)}%"></div></div><div class="v">${Math.round(t.share)}%</div></div></td></tr>`).join('')
+    || '<tr><td colspan="6" class="empty-note">Нет упоминаний</td></tr>';
+
+  // игры
+  const nG = XB.games.length;
+  const gl = XB.games.map((g, i) => {
+    let p = 0, z = 0, q = 0;
+    for (const r of rows) if (Math.floor(r[XF.games] / 2 ** i) % 2) { r[XF.stars] >= 4 ? p++ : r[XF.stars] <= 2 ? q++ : z++; }
+    return { id: g.id, name: g.name, bit: i, pos: p, neu: z, neg: q, total: p + z + q };
+  }).filter(g => g.total).sort((a, b) => b.total - a.total).slice(0, 5);
+  const gen = rows.filter(r => Math.floor(r[XF.games] / 2 ** nG) % 2).length;
+  if (!gl.some(g => g.id === xbOpenGame)) xbOpenGame = null;
+  const gbox = document.getElementById('xbGames');
+  gbox.innerHTML = gl.length ? gl.map((g, i) => `<button type="button" class="game-row${g.id === xbOpenGame ? ' open' : ''}" data-g="${esc(g.id)}" aria-expanded="${g.id === xbOpenGame}">
+      <span class="rank">${i + 1}</span><span class="gname">${esc(g.name)}<span class="chev">›</span></span>
+      <span class="bar-track"><span class="bar-fill" style="width:${100 * g.pos / g.total}%"></span><span class="bar-fill neu" style="width:${100 * g.neu / g.total}%"></span></span>
+      <span class="gpct">${Math.round(100 * g.pos / g.total)}%</span>
+      <span class="gcounts"><span style="color:var(--pos)">${g.pos}</span> / <span style="color:var(--neu)">${g.neu}</span> / <span style="color:var(--neg)">${g.neg}</span></span>
+      <span class="gtotal">${fmt(g.total)}</span></button>${g.id === xbOpenGame ? `<div class="game-ex" id="xbGameEx"></div>` : ''}`).join('')
+    : '<div class="empty-note">В выбранных отзывах другие игры не упоминаются</div>';
+  document.getElementById('xbGamesNote').textContent = gen ? `Ещё ${fmt(gen)} отзывов упоминают Need for Speed без указания конкретной части — они не входят в топ.` : '';
+  gbox.querySelectorAll('.game-row').forEach(b => b.addEventListener('click', () => { xbOpenGame = b.dataset.g === xbOpenGame ? null : b.dataset.g; xbRender(); }));
+  if (xbOpenGame) {
+    const g = gl.find(x => x.id === xbOpenGame);
+    const ex = rows.filter(r => r[XF.txt] && Math.floor(r[XF.games] / 2 ** g.bit) % 2).sort((a, b) => b[XF.ts] - a[XF.ts]).slice(0, 5).map(xbCard);
+    xbList('xbGameEx', ex, xbOpenGame);
+  }
+
+  // самый полезный и последние
+  const withText = rows.filter(r => r[XF.txt]).sort((a, b) => b[XF.ts] - a[XF.ts]);
+  const mh = rows.length ? rows.reduce((a, b) => b[XF.hp] > a[XF.hp] ? b : a) : null;
+  document.getElementById('xbTopStats').innerHTML = mh ? mini('Отметок «Полезно»', fmt(mh[XF.hp])) + mini('Оценка', STAR(mh[XF.stars])) + mini('Страна', esc((XB.markets[mh[XF.market]] || {}).name || '')) : '';
+  xbList('xbTop', mh ? [xbCard(mh)] : []);
+  xbList('xbRecentPos', withText.filter(r => r[XF.stars] >= 4).slice(0, 10).map(xbCard));
+  xbList('xbRecentNeg', withText.filter(r => r[XF.stars] <= 2).slice(0, 10).map(xbCard));
+
+  document.getElementById('xbMeta').innerHTML = `Источник: открытые данные Microsoft Store по игре ${esc(XB.product_id)} (Xbox). Оценки и отзывы в магазине Xbox привязаны к стране магазина, поэтому собираются по каждой стране отдельно (${XB.markets.length} стран с оценками или отзывами). «Оценок в магазине» — все оценки, включая поставленные без текста; остальные блоки считаются по текстовым отзывам. 4–5 ★ — положительные, 3 ★ — нейтральные, 1–2 ★ — отрицательные. Обновлено ${esc(new Date(XB.generated_at).toLocaleString('ru-RU', { timeZone: 'Europe/Moscow', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }))} МСК · сборщик консолей v${esc(XB.version || '')}.`;
+}
+
+initTabs();
+</script>
+</body>
+</html>
