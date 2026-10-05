@@ -1,5 +1,5 @@
-# CarX Street — ежедневное обновление дэшборда отзывов Steam
-# Версия: 1.1 (2026-10-02) — коммитит также docs/reviews (данные для фильтра по периоду)
+# CarX Street — ежедневное обновление дэшборда отзывов (Steam, PlayStation, Xbox)
+# Версия: 1.2 (2026-10-05) — добавлен сбор консолей; ошибка одного магазина не мешает остальным
 name: Обновление отзывов Steam
 
 on:
@@ -17,7 +17,7 @@ concurrency:
 jobs:
   update:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
 
@@ -25,17 +25,36 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Сбор отзывов
+      - name: Сбор отзывов Steam
+        id: steam
+        continue-on-error: true
         run: python scripts/fetch_reviews.py
 
+      - name: Сбор оценок и отзывов с консолей
+        id: consoles
+        continue-on-error: true
+        run: python scripts/fetch_consoles.py
+
       - name: Коммит данных
+        if: always()
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "41898333+github-actions[bot]@users.noreply.github.com"
-          git add -A docs/data.json docs/reviews
+          git add -A docs/data.json docs/reviews docs/consoles
           if git diff --cached --quiet; then
             echo "Изменений нет"
           else
             git commit -m "data: обновление отзывов $(date -u +'%Y-%m-%d')"
             git push
+          fi
+
+      - name: Проверка
+        if: always()
+        run: |
+          if [ "${{ steps.steam.outcome }}" != "success" ]; then
+            echo "::error::Сбор отзывов Steam завершился с ошибкой — на сайте остались прошлые данные Steam. Откройте шаг «Сбор отзывов Steam»."
+            exit 1
+          fi
+          if [ "${{ steps.consoles.outcome }}" != "success" ]; then
+            echo "::warning::Сбор консолей завершился с ошибкой — подробности в шаге «Сбор оценок и отзывов с консолей»."
           fi
