@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- CarX Street · дэшборд отзывов · версия 1.7 (2026-10-05) — вкладки Steam / PlayStation / Xbox, логотип и ключевой арт, шрифт Oswald, всегда тёмная тема -->
+<!-- CarX Street · дэшборд отзывов · версия 1.8 (2026-10-05) — вкладка VK Play, перевод самого полезного отзыва Steam; вкладки Steam / PlayStation / Xbox / VK Play, Oswald, тёмная тема -->
 <html lang="ru" data-theme="dark">
 <head>
 <meta charset="UTF-8">
@@ -194,8 +194,8 @@
     .mk-head, .mk-row { grid-template-columns: minmax(0, 1fr) 46px 52px 44px; } .mk-row .bar-track, .mk-head .h-bar { display: none; }
   }
   .sub-h { font-size: 12px; font-weight: 600; color: var(--text-muted); margin: 0 0 6px; }
-  #psApp, #xbApp { max-width: 1180px; margin: 0 auto; padding: 24px 32px 60px; }
-  @media (max-width: 560px) { #psApp, #xbApp { padding-left: 16px; padding-right: 16px; } }
+  #psApp, #xbApp, #vkApp { max-width: 1180px; margin: 0 auto; padding: 24px 32px 60px; }
+  @media (max-width: 560px) { #psApp, #xbApp, #vkApp { padding-left: 16px; padding-right: 16px; } }
   .card .scope { font-size: 11px; color: var(--accent); background: var(--accent-soft); border-radius: 8px; padding: 0 6px; margin-left: 6px; }
 
   /* облако */
@@ -295,7 +295,7 @@
   <img id="hdrImg" alt="" hidden>
   <div class="hero-in">
     <h1><img class="logo" src="assets/logo.png" alt="CarX Street" width="392" height="100"><span class="h1-text">Отзывы игроков</span></h1>
-    <p class="subtitle">Обновляется автоматически каждый день · <span id="updated">загрузка…</span><span class="links"><a id="storeLink" href="https://store.steampowered.com/app/1114150/" target="_blank" rel="noopener">Steam Store ↗</a> · <a href="https://store.playstation.com/en-us/concept/10001917" target="_blank" rel="noopener">PlayStation Store (US) ↗</a> · <a href="https://www.xbox.com/en-US/games/store/carx-street/9nn082lmvv2c" target="_blank" rel="noopener">Xbox Store (US) ↗</a></p>
+    <p class="subtitle">Обновляется автоматически каждый день · <span id="updated">загрузка…</span><span class="links"><a id="storeLink" href="https://store.steampowered.com/app/1114150/" target="_blank" rel="noopener">Steam Store ↗</a> · <a href="https://store.playstation.com/en-us/concept/10001917" target="_blank" rel="noopener">PlayStation Store (US) ↗</a> · <a href="https://www.xbox.com/en-US/games/store/carx-street/9nn082lmvv2c" target="_blank" rel="noopener">Xbox Store (US) ↗</a> · <a href="https://vkplay.ru/play/game/carx-street-34754/" target="_blank" rel="noopener">VK Play ↗</a></p>
   </div>
 </header></div>
 
@@ -303,6 +303,7 @@
   <button type="button" role="tab" data-tab="steam" class="on" aria-selected="true">Steam</button>
   <button type="button" role="tab" data-tab="ps" aria-selected="false" tabindex="-1">PlayStation<span class="tab-sub">PS5</span></button>
   <button type="button" role="tab" data-tab="xbox" aria-selected="false" tabindex="-1">Xbox<span class="tab-sub">Series X|S</span></button>
+  <button type="button" role="tab" data-tab="vk" aria-selected="false" tabindex="-1">VK Play<span class="tab-sub">ПК</span></button>
 </nav></div>
 
 <main id="app">
@@ -488,14 +489,89 @@
   <p class="meta-note" id="xbMeta"></p>
 </main>
 
+<main id="vkApp" hidden>
+  <div class="filter-bar" id="vkFilterBar" hidden></div>
+  <div class="cards five" id="vkCards"></div>
+
+  <div class="panel" id="vkPeriodPanel">
+    <div class="period-row">
+      <h2>Период</h2>
+      <label class="period-field"><span>с</span><input id="vkDateFrom" type="text" inputmode="numeric" placeholder="дд.мм.гггг" maxlength="10" autocomplete="off" aria-label="Дата начала периода"></label>
+      <label class="period-field"><span>по</span><input id="vkDateTo" type="text" inputmode="numeric" placeholder="дд.мм.гггг" maxlength="10" autocomplete="off" aria-label="Дата конца периода"></label>
+      <button type="button" class="btn-primary" id="vkPeriodApply">Показать</button>
+      <button type="button" class="btn-ghost" id="vkPeriodReset" disabled>Сбросить даты</button>
+    </div>
+    <p class="period-msg" id="vkPeriodMsg" hidden></p>
+  </div>
+
+  <div class="grid-2">
+    <div class="panel">
+      <h2 id="vkWeekTitle">Новые отзывы по дням</h2>
+      <div class="mini-cards" id="vkWeekCards"></div>
+      <div class="legend"><span style="--c:var(--pos)">6–10</span><span style="--c:var(--neu)">5</span><span style="--c:var(--neg)">1–4</span></div>
+      <div class="chart-box" style="height:220px"><canvas id="vkWeekChart" aria-label="Отзывы VK Play по дням"></canvas></div>
+    </div>
+    <div class="panel">
+      <h2>Оценки в отзывах <span class="sub">баллы от 1 до 10</span></h2>
+      <div id="vkScores"></div>
+    </div>
+  </div>
+
+  <div class="grid-2" id="vkMonthPanel">
+    <div class="panel">
+      <h2>Тренд за 30 дней <span class="sub">отзывы по дням, МСК</span></h2>
+      <div class="legend"><span style="--c:var(--pos)">6–10</span><span style="--c:var(--neu)">5</span><span style="--c:var(--neg)">1–4</span></div>
+      <div class="chart-box"><canvas id="vkMonthChart" aria-label="Отзывы VK Play за 30 дней"></canvas></div>
+    </div>
+    <div class="panel">
+      <h2>Средняя оценка VK Play <span class="sub">по ежедневным снимкам</span></h2>
+      <p class="note" id="vkHistNote"></p>
+      <div class="chart-box" id="vkAvgBox" hidden style="height:200px"><canvas id="vkAvgChart" aria-label="Средняя оценка VK Play по дням"></canvas></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>О чём пишут <span class="sub">темы и число отзывов, где они упоминаются</span></h2>
+    <div class="grid-2e">
+      <div class="cloud-col"><h3><span class="dot" style="background:var(--pos)"></span>В положительных (6–10)</h3><div class="cloud pos" id="vkCloudPos"></div></div>
+      <div class="cloud-col"><h3><span class="dot" style="background:var(--neg)"></span>В отрицательных (1–4)</h3><div class="cloud neg" id="vkCloudNeg"></div></div>
+    </div>
+    <details class="tbl" open>
+      <summary>Таблица по темам <span class="sub" style="color:var(--text-muted)">· нажмите на заголовок, чтобы пересортировать</span></summary>
+      <div class="tbl-wrap"><table id="vkTagTable"><thead><tr>
+        <th data-k="name">Тема</th><th data-k="pos" class="num">6–10</th><th data-k="neu" class="num">5</th><th data-k="neg" class="num">1–4</th><th data-k="total" class="num">Всего</th><th data-k="share">Доля в 1–4</th>
+      </tr></thead><tbody></tbody></table></div>
+    </details>
+  </div>
+
+  <div class="panel">
+    <h2>Упоминания других игр <span class="sub">топ-5 · нажмите на игру, чтобы увидеть примеры</span></h2>
+    <div class="legend"><span style="--c:var(--pos)">6–10</span><span style="--c:var(--neu)">5</span><span style="--c:var(--neg)">1–4</span></div>
+    <div id="vkGames"></div>
+    <p class="note" id="vkGamesNote" style="margin:10px 0 0"></p>
+  </div>
+
+  <div class="panel top-review">
+    <h2>Самый полезный отзыв <span class="sub">больше всего 👍 за всё время</span></h2>
+    <div class="stats" id="vkTopStats"></div>
+    <div id="vkTop"></div>
+  </div>
+
+  <div class="grid-2e">
+    <div class="panel"><h2>10 последних положительных <span class="sub">6–10 баллов</span></h2><div id="vkRecentPos"></div></div>
+    <div class="panel"><h2>10 последних отрицательных <span class="sub">1–4 балла</span></h2><div id="vkRecentNeg"></div></div>
+  </div>
+  <p class="meta-note" id="vkMeta"></p>
+</main>
+
 <footer id="footer"></footer>
 <div class="art-foot"><div class="art-foot-in"><div class="art-foot-body">
   <img class="logo" src="assets/logo.png" alt="CarX Street" width="392" height="100">
-  <p>Дэшборд отзывов игроков · Steam · PlayStation · Xbox</p>
+  <p>Дэшборд отзывов игроков · Steam · PlayStation · Xbox · VK Play</p>
 </div></div></div>
 
 <script>
-/* CarX Street · дэшборд отзывов · версия 1.7 */
+/* CarX Street · дэшборд отзывов · версия 1.8 */
 if (window.Chart && Chart.defaults && Chart.defaults.font) Chart.defaults.font.family = '"Oswald", "Arial Narrow", sans-serif';
 const fmt = n => (n ?? 0).toLocaleString('ru-RU');
 const pctTxt = v => v == null ? '—' : v.toFixed(1).replace('.', ',') + '%';
@@ -743,7 +819,7 @@ async function translateRu(text, lang) {
   trCache.set(key, p);
   return p;
 }
-function translateMissing(list, containerId, token) {
+function translateMissing(list, containerId, token, big) {
   (list || []).forEach((r, i) => {
     if (!r || r.text_ru || r.language === 'russian' || !/\p{L}/u.test(r.text || '')) return;
     translateRu(r.text, r.language).then(tr => {
@@ -752,7 +828,7 @@ function translateMissing(list, containerId, token) {
       const root = document.getElementById(containerId);
       const el = root && root.querySelectorAll('.review')[i];
       if (!el) return;
-      el.outerHTML = reviewHtml(r);
+      el.outerHTML = reviewHtml(r, big);
       wireReviews(root);
     });
   });
@@ -844,6 +920,7 @@ function renderReviews(d) {
   document.getElementById('recentPos').innerHTML = (d.recent_positive || []).map(r => reviewHtml(r)).join('') || reviewHtml(null);
   document.getElementById('recentNeg').innerHTML = (d.recent_negative || []).map(r => reviewHtml(r)).join('') || reviewHtml(null);
   ['topReview', 'recentPos', 'recentNeg'].forEach(id => wireReviews(document.getElementById(id)));
+  translateMissing(mh ? [mh] : [], 'topReview', token, true);
   translateMissing(d.recent_positive, 'recentPos', token);
   translateMissing(d.recent_negative, 'recentNeg', token);
 }
@@ -859,7 +936,7 @@ function renderMeta(d) {
     При выборе периода все цифры считаются по загруженным отзывам за эти даты (по московскому времени), поэтому могут немного расходиться со сводкой Steam.
     Темы определяются по словарю ключевых слов на ${d.languages?.length || ''}+ языках (файл <code>scripts/tags.json</code>, его можно дополнять).
     Загружено ${fmt(d.fetched?.count)} текстов отзывов (${pctTxt(d.fetched?.coverage)} от общего числа) — по ним считаются темы, динамика и бесплатные копии.</p>
-    <p>Дэшборд v1.7 · сборщик v${esc(d.version)}</p>`;
+    <p>Дэшборд v1.8 · сборщик v${esc(d.version)}</p>`;
 }
 
 /* ---------- Период ---------- */
@@ -1136,13 +1213,14 @@ loadData().then(d => {
   document.getElementById('app').innerHTML = `<div class="err">Не удалось загрузить данные: ${esc(e.message)}.<br>Если вы открыли файл локально, запустите <code>python -m http.server</code> в папке <code>docs</code> или откройте опубликованную страницу GitHub Pages.</div>`;
 });
 
-/* ================== Вкладки: Steam / PlayStation / Xbox (v1.7) ================== */
-const TABS = ['steam', 'ps', 'xbox'];
+/* ================== Вкладки: Steam / PlayStation / Xbox / VK Play (v1.8) ================== */
+const TABS = ['steam', 'ps', 'xbox', 'vk'];
 let currentTab = 'steam', steamHash = '';
 function tabFromHash() {
   const h = (location.hash || '').replace('#', '');
   if (h === 'ps' || h.startsWith('ps~')) return 'ps';
   if (h === 'xbox' || h.startsWith('xbox~')) return 'xbox';
+  if (h === 'vk' || h.startsWith('vk~')) return 'vk';
   return 'steam';
 }
 function showTab(tab, fromHash) {
@@ -1153,16 +1231,18 @@ function showTab(tab, fromHash) {
   document.getElementById('footer').hidden = tab !== 'steam';
   document.getElementById('psApp').hidden = tab !== 'ps';
   document.getElementById('xbApp').hidden = tab !== 'xbox';
+  document.getElementById('vkApp').hidden = tab !== 'vk';
   document.querySelectorAll('.tabs button').forEach(b => {
     const on = b.dataset.tab === tab;
     b.classList.toggle('on', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); b.tabIndex = on ? 0 : -1;
   });
   if (!fromHash) {
-    let h = tab === 'steam' ? steamHash : tab === 'ps' ? '#ps' : '#' + xbHash();
+    let h = tab === 'steam' ? steamHash : tab === 'ps' ? '#ps' : tab === 'vk' ? '#' + vkHash() : '#' + xbHash();
     try { history.replaceState(null, '', h && h !== '#' ? h : location.pathname + location.search); } catch (e) { location.hash = h; }
   }
   if (tab === 'ps') loadPS();
   if (tab === 'xbox') loadXbox();
+  if (tab === 'vk') loadVK();
   if (tab === 'steam' && charts.weekChart) Object.values(charts).forEach(ch => ch && ch.resize && ch.resize());
 }
 function initTabs() {
@@ -1174,7 +1254,7 @@ function initTabs() {
     showTab(n); bar.querySelector(`[data-tab="${n}"]`).focus();
   });
   showTab(tabFromHash(), true);
-  window.addEventListener('hashchange', () => { const t = tabFromHash(); if (t !== currentTab) showTab(t, true); else if (t === 'xbox') { xbParseHash(); xbRender(); } });
+  window.addEventListener('hashchange', () => { const t = tabFromHash(); if (t !== currentTab) showTab(t, true); else if (t === 'xbox') { xbParseHash(); xbRender(); } else if (t === 'vk') { vkParseHash(); vkRender(); } });
 }
 
 /* ---------- общие помощники для консолей ---------- */
@@ -1491,6 +1571,243 @@ function xbRender() {
   xbList('xbRecentNeg', withText.filter(r => r[XF.stars] <= 2).slice(0, 10).map(xbCard));
 
   document.getElementById('xbMeta').innerHTML = `Источник: открытые данные Microsoft Store по игре ${esc(XB.product_id)} (Xbox). Оценки и отзывы в магазине Xbox привязаны к стране магазина, поэтому собираются по каждой стране отдельно (${XB.markets.length} стран с оценками или отзывами). «Оценок в магазине» — все оценки, включая поставленные без текста; остальные блоки считаются по текстовым отзывам. 4–5 ★ — положительные, 3 ★ — нейтральные, 1–2 ★ — отрицательные. Обновлено ${esc(new Date(XB.generated_at).toLocaleString('ru-RU', { timeZone: 'Europe/Moscow', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }))} МСК · сборщик консолей v${esc(XB.version || '')}.`;
+}
+
+/* ================== VK Play (v1.8) ================== */
+let VK = null, vkPeriod = null, vkOpenGame = null, vkTagSort = 'total';
+const VF = { id: 0, ts: 1, score: 2, likes: 3, dislikes: 4, tags: 5, games: 6, txt: 7, hours: 8, foreign: 9 };
+// группы — как у VK Play: 6–10 положительные, 5 нейтральные, 1–4 отрицательные; 0 — оценка скрыта
+const vkGroup = s => !s ? 'none' : s >= 6 ? 'pos' : s === 5 ? 'neu' : 'neg';
+const vkCol = g => g === 'pos' ? 'var(--pos)' : g === 'neg' ? 'var(--neg)' : 'var(--neu)';
+function vkHash() { return vkPeriod ? `vk~${vkPeriod.from || ''}~${vkPeriod.to || ''}` : 'vk'; }
+function vkParseHash() {
+  const h = decodeURIComponent((location.hash || '').replace('#', ''));
+  if (!h.startsWith('vk~')) { vkPeriod = null; return; }
+  const [, f, t] = h.split('~'), ok = s => /^\d{4}-\d{2}-\d{2}$/.test(s || '') ? s : null;
+  vkPeriod = ok(f) || ok(t) ? { from: ok(f), to: ok(t) } : null;
+}
+function vkSetPeriod(p) {
+  vkPeriod = p && (p.from || p.to) ? p : null;
+  try { history.replaceState(null, '', '#' + vkHash()); } catch (e) { location.hash = vkHash(); }
+  vkRender();
+}
+async function loadVK() {
+  if (VK) { vkParseHash(); return vkRender(); }
+  try {
+    VK = await fetchJson('vkplay/vkplay.json');
+    vkParseHash(); vkInitControls(); vkRender();
+  } catch (e) { document.getElementById('vkApp').innerHTML = `<div class="err">Данных VK Play пока нет: ${esc(e.message)}. Они появятся после ближайшего запуска обновления (GitHub Actions).</div>`; }
+}
+function vkInitControls() {
+  ['vkDateFrom', 'vkDateTo'].forEach(id => maskDate(document.getElementById(id)));
+  const submit = () => {
+    const fe = document.getElementById('vkDateFrom'), te = document.getElementById('vkDateTo');
+    const a = parseRuDate(fe.value), b = parseRuDate(te.value), msg = document.getElementById('vkPeriodMsg');
+    const err = t => { msg.textContent = t; msg.className = 'period-msg err'; msg.hidden = false; };
+    fe.classList.toggle('bad', !!a.error); te.classList.toggle('bad', !!b.error);
+    if (a.error || b.error) return err(a.error || b.error);
+    if (a.empty && b.empty) return err('Укажите хотя бы одну дату: «с» или «по»');
+    if (a.iso && b.iso && a.iso > b.iso) return err('Дата «с» позже даты «по»');
+    msg.hidden = true; vkSetPeriod({ from: a.iso || null, to: b.iso || null });
+  };
+  ['vkDateFrom', 'vkDateTo'].forEach(id => document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter') { e.stopImmediatePropagation(); submit(); } }, true));
+  document.getElementById('vkPeriodApply').addEventListener('click', submit);
+  document.getElementById('vkPeriodReset').addEventListener('click', () => {
+    document.getElementById('vkDateFrom').value = ''; document.getElementById('vkDateTo').value = '';
+    document.getElementById('vkPeriodMsg').hidden = true; vkSetPeriod(null);
+  });
+  document.querySelectorAll('#vkTagTable th').forEach(th => th.addEventListener('click', () => { vkTagSort = th.dataset.k; vkRender(); }));
+}
+function vkRows() {
+  const from = vkPeriod?.from ? tsOfIso(vkPeriod.from) : -Infinity, to = vkPeriod?.to ? tsOfIso(vkPeriod.to) + 86399 : Infinity;
+  return VK.rows.filter(r => r[VF.ts] >= from && r[VF.ts] <= to);
+}
+function vkCard(r) {
+  const t = VK.texts[String(r[VF.id])] || ['', ''];
+  return { id: r[VF.id], score: r[VF.score], text: t[0], author: t[1] || 'Игрок VK Play', created: r[VF.ts],
+    likes: r[VF.likes], dislikes: r[VF.dislikes], hours: r[VF.hours], foreign: r[VF.foreign], url: VK.reviews_url };
+}
+function vkReviewHtml(r) {
+  if (!r) return '<div class="empty-note">Нет отзывов</div>';
+  const g = vkGroup(r.score);
+  return `<div class="review" style="--c:${vkCol(g)}">
+    <div class="meta"><span class="verdict stars-${g === 'none' ? 'neu' : g}" title="${r.score ? r.score + ' из 10' : 'оценка скрыта: меньше 2 часов в игре'}">★ ${r.score || '—'}</span>
+      <b>${esc(r.author)}</b><span>${dateTime(r.created)}</span>${r.hours ? `<span>${String(r.hours).replace('.', ',')} ч в игре</span>` : ''}
+      <span>👍 ${fmt(r.likes)} · 👎 ${fmt(r.dislikes)}</span></div>
+    ${r.text_ru ? `<div class="tr-label">Машинный перевод</div>` : ''}
+    <div class="text">${esc(r.text_ru || r.text) || '<i>без текста</i>'}</div>
+    ${r.text_ru ? `<div class="orig" hidden>${esc(r.text)}</div>` : ''}
+    <div class="actions"><button class="more" type="button">Развернуть</button>${r.text_ru ? '<button class="show-orig" type="button">Показать оригинал</button>' : ''}<a href="${esc(r.url)}" target="_blank" rel="noopener">Отзывы в VK Play ↗</a></div>
+  </div>`;
+}
+function vkList(containerId, list, hl) {
+  const root = document.getElementById(containerId);
+  root.innerHTML = list.length ? list.map(vkReviewHtml).join('') : vkReviewHtml(null);
+  const mark = el => { if (hl) el.querySelectorAll('.text, .orig').forEach(x => { x.innerHTML = vkHighlight(x.innerHTML, hl); }); };
+  mark(root); wireReviews(root);
+  list.forEach((r, i) => {
+    if (!r.foreign || r.text_ru || !/\p{L}/u.test(r.text || '')) return;  // переводим только отзывы не на русском
+    translateRu(r.text, 'auto').then(tr => {
+      if (!tr) return;
+      r.text_ru = tr;
+      const el = root.querySelectorAll('.review')[i]; if (!el) return;
+      el.outerHTML = vkReviewHtml(r);
+      const fresh = root.querySelectorAll('.review')[i]; if (fresh) mark(fresh);
+      wireReviews(root);
+    });
+  });
+}
+let vkGameRx = null;
+function vkHighlight(html, gid) {
+  if (!vkGameRx) {
+    vkGameRx = {};
+    for (const g of (VK.games || [])) {
+      try { vkGameRx[g.id] = new RegExp(g.patterns.map(p => '(?:' + p.replaceAll('\\b', GB).replaceAll('\\w', GW) + ')').join('|'), 'giu'); } catch (e) {}
+    }
+  }
+  const rx = vkGameRx[gid]; if (!rx) return html; rx.lastIndex = 0;
+  return html.replace(rx, m => `<mark>${m}</mark>`);
+}
+function vkSeries(rows, fromIso, toIso) {
+  const days = Math.round((Date.parse(toIso) - Date.parse(fromIso)) / 864e5) + 1, weekly = days > 90;
+  const by = {};
+  for (const r of rows) { const g = vkGroup(r[VF.score]); if (g === 'none') continue; const k = isoOf(r[VF.ts]); (by[k] = by[k] || [0, 0, 0])[g === 'pos' ? 0 : g === 'neu' ? 1 : 2]++; }
+  const out = [];
+  for (let t = Date.parse(fromIso); t <= Date.parse(toIso); t += 864e5) {
+    const k = new Date(t).toISOString().slice(0, 10), v = by[k] || [0, 0, 0];
+    const wd = (new Date(t).getUTCDay() + 6) % 7, last = out[out.length - 1];
+    if (!weekly || !last || wd === 0) out.push({ date: k, end: k, label: dayLabel(k), pos: v[0], neu: v[1], neg: v[2] });
+    else { last.pos += v[0]; last.neu += v[1]; last.neg += v[2]; last.end = k; }
+  }
+  if (weekly) out.forEach(s => { s.title = `Неделя ${dayLabel(s.date)} – ${dayLabel(s.end)}`; });
+  return { series: out, days, weekly };
+}
+function vkStacked(id, rows) {
+  xbStacked(id, rows);
+  const ch = charts[id]; if (!ch) return;
+  ['6–10', '5', '1–4'].forEach((l, i) => { if (ch.data.datasets[i]) ch.data.datasets[i].label = l; });
+  ch.update && ch.update();
+}
+function vkRender() {
+  if (!VK) return;
+  const rows = vkRows(), rated = rows.filter(r => r[VF.score]);
+  const n = rows.length, pos = rated.filter(r => r[VF.score] >= 6).length, neu = rated.filter(r => r[VF.score] === 5).length, neg = rated.filter(r => r[VF.score] <= 4).length;
+  const S = VK.summary || {};
+  // плашка фильтра
+  const bar = document.getElementById('vkFilterBar');
+  bar.hidden = !vkPeriod;
+  bar.innerHTML = vkPeriod ? `<span>Показаны отзывы:</span><span class="chip">Период: <b>${esc(periodText(vkPeriod))}</b><button type="button" data-x="p" aria-label="Убрать период">×</button></span><span class="muted">отзывов: ${fmt(n)}</span>` : '';
+  bar.querySelectorAll('[data-x]').forEach(b => b.addEventListener('click', () => document.getElementById('vkPeriodReset').click()));
+  document.getElementById('vkPeriodReset').disabled = !vkPeriod;
+  if (vkPeriod) { document.getElementById('vkDateFrom').value = ruDate(vkPeriod.from || ''); document.getElementById('vkDateTo').value = ruDate(vkPeriod.to || ''); }
+
+  // карточки: без периода — сводка VK Play (совпадает со страницей игры), с периодом — по отзывам за период
+  const scope = vkPeriod ? `<span class="scope">${esc(periodText(vkPeriod))}</span>` : '';
+  const P = vkPeriod ? pos : S.high, Z = vkPeriod ? neu : S.medium, G = vkPeriod ? neg : S.low, T = (P || 0) + (Z || 0) + (G || 0);
+  const avgP = rated.length ? rated.reduce((a, r) => a + r[VF.score], 0) / rated.length : null;
+  const avg10 = v => v == null ? '—' : (+v).toFixed(1).replace('.', ',');
+  document.getElementById('vkCards').innerHTML =
+    card('Оценка игроков' + scope, `${avg10(vkPeriod ? avgP : S.avg)} <span class="mini-sub">из 10</span>`, vkPeriod ? `по ${fmt(rated.length)} отзывам с оценкой` : `${fmt(S.count)} оценок · по данным VK Play`) +
+    card('Отзывов' + scope, fmt(n), vkPeriod ? 'за выбранный период' : 'за всё время') +
+    card('Положительные (6–10)' + scope, fmt(P), T ? pctTxt(100 * P / T) + ' от оценок' : '—', 'var(--pos)') +
+    card('Нейтральные (5)' + scope, fmt(Z), T ? pctTxt(100 * Z / T) + ' от оценок' : '—', 'var(--neu)') +
+    card('Отрицательные (1–4)' + scope, fmt(G), T ? pctTxt(100 * G / T) + ' от оценок' : '—', 'var(--neg)');
+
+  // динамика
+  const today = isoOf(Date.now() / 1000);
+  let s1, s2;
+  if (vkPeriod) {
+    const f = vkPeriod.from || (rows.length ? isoOf(Math.min(...rows.map(r => r[VF.ts]))) : today);
+    s1 = s2 = vkSeries(rows, f, vkPeriod.to || today);
+    document.getElementById('vkWeekTitle').innerHTML = `Отзывы за период по ${s1.weekly ? 'неделям' : 'дням'} <span class="sub">${esc(periodText(vkPeriod))}, МСК</span>`;
+    document.getElementById('vkMonthPanel').hidden = true;
+  } else {
+    s1 = vkSeries(rows, isoOf(Date.now() / 1000 - 6 * 86400), today);
+    s2 = vkSeries(rows, isoOf(Date.now() / 1000 - 29 * 86400), today);
+    document.getElementById('vkWeekTitle').innerHTML = 'Новые отзывы по дням <span class="sub">последние 7 дней, МСК</span>';
+    document.getElementById('vkMonthPanel').hidden = false;
+  }
+  const sum = a => a.reduce((x, r) => x + r.pos + r.neu + r.neg, 0);
+  document.getElementById('vkWeekCards').innerHTML = vkPeriod
+    ? mini('За период', fmt(sum(s1.series))) + mini('В среднем в день', (sum(s1.series) / s1.days).toFixed(1).replace('.', ',')) + mini('Дней в периоде', fmt(s1.days))
+    : mini('За 7 дней', fmt(sum(s1.series))) + mini('За 30 дней', fmt(sum(s2.series))) + mini('В среднем в день (30 дн.)', (sum(s2.series) / 30).toFixed(1).replace('.', ','));
+  vkStacked('vkWeekChart', s1.series);
+  if (!vkPeriod) vkStacked('vkMonthChart', s2.series);
+
+  // распределение баллов 1–10
+  const cnt = {}; rated.forEach(r => { cnt[r[VF.score]] = (cnt[r[VF.score]] || 0) + 1; });
+  const hidden = n - rated.length;
+  document.getElementById('vkScores').innerHTML = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map(s => {
+    const c = cnt[s] || 0, p = rated.length ? 100 * c / rated.length : 0, g = vkGroup(s);
+    return `<div class="star-row"><span class="star-label">★ ${s}</span>
+      <span class="bar-track"><span class="bar-fill ${g}" style="width:${p}%"></span></span>
+      <span class="star-val">${p.toFixed(0)}%</span><span class="star-cnt">${fmt(c)}</span></div>`;
+  }).join('') + (hidden ? `<p class="note" style="margin:10px 0 0">Ещё ${fmt(hidden)} отзыв(ов) без оценки: VK Play скрывает оценку, если автор провёл в игре меньше 2 часов.</p>` : '');
+
+  // средняя по снимкам
+  const hist = (VK.history || []).filter(h => h.avg != null);
+  const hn = document.getElementById('vkHistNote');
+  if (hist.length < 2) {
+    hn.textContent = `Средняя оценка VK Play сохраняется каждый день. Первый снимок — ${ruDate(hist[0]?.date || S.date || '')}; график появится со второго дня.`;
+    document.getElementById('vkAvgBox').hidden = true;
+  } else {
+    hn.textContent = `Ежедневные снимки с ${ruDate(hist[0].date)}.`;
+    document.getElementById('vkAvgBox').hidden = false;
+    simpleChart('vkAvgChart', 'line', hist.slice(-90).map(h => ({ label: dayLabel(h.date), avg: h.avg })), r => r.avg, 'Средняя оценка', css('--pos'), { min: 1, max: 10 });
+  }
+
+  // темы
+  const tags = VK.tags.map((t, i) => {
+    let p = 0, z = 0, g = 0; const bit = 2 ** i;
+    for (const r of rated) if (Math.floor(r[VF.tags] / bit) % 2) { const q = vkGroup(r[VF.score]); q === 'pos' ? p++ : q === 'neg' ? g++ : z++; }
+    return { name: t.name, pos: p, neu: z, neg: g, total: p + z + g, share: (p + z + g) ? 100 * g / (p + z + g) : 0 };
+  }).filter(t => t.total);
+  const cloud = (el, key) => {
+    const list = tags.filter(t => t[key] > 0).sort((a, b) => b[key] - a[key]);
+    if (!list.length) { el.innerHTML = '<div class="empty-note">Нет упоминаний</div>'; return; }
+    const max = list[0][key], min = list[list.length - 1][key], big = window.innerWidth < 560 ? 14 : 22;
+    el.innerHTML = list.map(t => `<span class="w" style="font-size:${(max === min ? 12 + big : 12 + big * Math.sqrt((t[key] - min) / (max - min))).toFixed(1)}px" title="${esc(t.name)}: ${fmt(t[key])}">${esc(t.name)}<sup>${fmt(t[key])}</sup></span>`).join('');
+  };
+  cloud(document.getElementById('vkCloudPos'), 'pos'); cloud(document.getElementById('vkCloudNeg'), 'neg');
+  const sk = vkTagSort;
+  document.querySelector('#vkTagTable tbody').innerHTML = tags.sort((a, b) => sk === 'name' ? a.name.localeCompare(b.name, 'ru') : (b[sk] - a[sk]) || b.total - a.total)
+    .map(t => `<tr><td>${esc(t.name)}</td><td class="num">${fmt(t.pos)}</td><td class="num">${fmt(t.neu)}</td><td class="num">${fmt(t.neg)}</td><td class="num">${fmt(t.total)}</td>
+      <td><div class="share"><div class="t"><div class="f" style="width:${t.share.toFixed(1)}%"></div></div><div class="v">${Math.round(t.share)}%</div></div></td></tr>`).join('')
+    || '<tr><td colspan="6" class="empty-note">Нет упоминаний</td></tr>';
+
+  // игры
+  const nG = VK.games.length;
+  const gl = VK.games.map((g, i) => {
+    let p = 0, z = 0, q = 0, all = 0;
+    for (const r of rows) if (Math.floor(r[VF.games] / 2 ** i) % 2) { all++; const k = vkGroup(r[VF.score]); k === 'pos' ? p++ : k === 'neg' ? q++ : z++; }
+    return { id: g.id, name: g.name, bit: i, pos: p, neu: z, neg: q, total: all };
+  }).filter(g => g.total).sort((a, b) => b.total - a.total).slice(0, 5);
+  const gen = rows.filter(r => Math.floor(r[VF.games] / 2 ** nG) % 2).length;
+  if (!gl.some(g => g.id === vkOpenGame)) vkOpenGame = null;
+  const gbox = document.getElementById('vkGames');
+  gbox.innerHTML = gl.length ? gl.map((g, i) => `<button type="button" class="game-row${g.id === vkOpenGame ? ' open' : ''}" data-g="${esc(g.id)}" aria-expanded="${g.id === vkOpenGame}">
+      <span class="rank">${i + 1}</span><span class="gname">${esc(g.name)}<span class="chev">›</span></span>
+      <span class="bar-track"><span class="bar-fill" style="width:${100 * g.pos / g.total}%"></span><span class="bar-fill neu" style="width:${100 * g.neu / g.total}%"></span></span>
+      <span class="gpct">${Math.round(100 * g.pos / g.total)}%</span>
+      <span class="gcounts"><span style="color:var(--pos)">${g.pos}</span> / <span style="color:var(--neu)">${g.neu}</span> / <span style="color:var(--neg)">${g.neg}</span></span>
+      <span class="gtotal">${fmt(g.total)}</span></button>${g.id === vkOpenGame ? `<div class="game-ex" id="vkGameEx"></div>` : ''}`).join('')
+    : '<div class="empty-note">В выбранных отзывах другие игры не упоминаются</div>';
+  document.getElementById('vkGamesNote').textContent = gen ? `Ещё ${fmt(gen)} отзывов упоминают Need for Speed без указания конкретной части — они не входят в топ.` : '';
+  gbox.querySelectorAll('.game-row').forEach(b => b.addEventListener('click', () => { vkOpenGame = b.dataset.g === vkOpenGame ? null : b.dataset.g; vkRender(); }));
+  if (vkOpenGame) {
+    const g = gl.find(x => x.id === vkOpenGame);
+    vkList('vkGameEx', rows.filter(r => r[VF.txt] && Math.floor(r[VF.games] / 2 ** g.bit) % 2).sort((a, b) => b[VF.ts] - a[VF.ts]).slice(0, 5).map(vkCard), vkOpenGame);
+  }
+
+  // самый полезный и последние
+  const withText = rows.filter(r => r[VF.txt]).sort((a, b) => b[VF.ts] - a[VF.ts]);
+  const mh = rows.length ? rows.reduce((a, b) => (b[VF.likes] > a[VF.likes] || (b[VF.likes] === a[VF.likes] && b[VF.dislikes] < a[VF.dislikes])) ? b : a) : null;
+  document.getElementById('vkTopStats').innerHTML = mh ? mini('👍 Полезно', fmt(mh[VF.likes])) + mini('👎 Не полезно', fmt(mh[VF.dislikes])) + mini('Оценка', mh[VF.score] ? `★ ${mh[VF.score]} из 10` : 'скрыта') : '';
+  vkList('vkTop', mh ? [vkCard(mh)] : []);
+  vkList('vkRecentPos', withText.filter(r => vkGroup(r[VF.score]) === 'pos').slice(0, 10).map(vkCard));
+  vkList('vkRecentNeg', withText.filter(r => vkGroup(r[VF.score]) === 'neg').slice(0, 10).map(vkCard));
+
+  document.getElementById('vkMeta').innerHTML = `Источник: открытые данные <a href="${esc(VK.reviews_url)}" target="_blank" rel="noopener">страницы отзывов VK Play ↗</a>. Шкала VK Play — от 1 до 10; группы как у самого VK Play: 6–10 — положительные, 5 — нейтральные, 1–4 — отрицательные. Карточки без выбранного периода — сводка VK Play (в ней учтены только оценки игроков, проведших в игре больше 2 часов), остальные блоки считаются по отзывам. Самый полезный — по числу 👍. Обновлено ${esc(new Date(VK.generated_at).toLocaleString('ru-RU', { timeZone: 'Europe/Moscow', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }))} МСК · сборщик VK Play v${esc(VK.version || '')}.`;
 }
 
 initTabs();
