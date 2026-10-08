@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 CarX Street — сборщик оценок и отзывов с консолей (PlayStation Store и Xbox / Microsoft Store).
-Версия: 1.1 (2026-10-05) — ссылка на PS Store ведёт на регион US
+Версия: 1.2 (2026-10-08) — в xbox.json у тем есть паттерны (для подсветки на странице)
 
 Что делает:
   PlayStation — берёт со страницы игры среднюю оценку, число оценок и распределение по звёздам.
@@ -27,7 +27,7 @@ import urllib.parse
 import urllib.request
 from datetime import datetime, timedelta, timezone
 
-SCRIPT_VERSION = "1.1"
+SCRIPT_VERSION = "1.2"
 TZ = timezone(timedelta(hours=3))  # МСК
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT_DIR = os.path.join(ROOT, "docs", "consoles")
@@ -299,7 +299,7 @@ def update_xbox():
         "store_url_tpl": XBOX_STORE_URL,
         "summary": entry,
         "markets": markets,
-        "tags": [{"id": t[0], "name": t[1]} for t in tags],
+        "tags": [{"id": t[0], "name": t[1], "patterns": t[3]} for t in tags],
         "games": [{"id": g[0], "name": g[1], "patterns": g[3]} for g in games],
         "fields": ["id", "ts", "stars", "market", "helpful_pos", "helpful_neg", "tags", "games", "has_text"],
         "rows": rows,

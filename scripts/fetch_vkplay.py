@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 CarX Street — сборщик отзывов VK Play.
-Версия: 1.0 (2026-10-05)
+Версия: 1.1 (2026-10-08) — у тем есть паттерны (для подсветки на странице)
 
 Что делает:
   Берёт из открытого API VK Play (то же, что использует страница игры, вход не нужен):
@@ -31,7 +31,7 @@ import urllib.parse
 import urllib.request
 from datetime import datetime, timedelta, timezone
 
-SCRIPT_VERSION = "1.0"
+SCRIPT_VERSION = "1.1"
 TZ = timezone(timedelta(hours=3))  # МСК — даты в API VK Play указаны по Москве
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT_PATH = os.path.join(ROOT, "docs", "vkplay", "vkplay.json")
@@ -181,7 +181,7 @@ def build(reviews, stat, prev):
         "reviews_url": REVIEWS_URL,
         "groups": {"pos": [6, 10], "neu": [5, 5], "neg": [1, 4]},
         "summary": entry,
-        "tags": [{"id": t[0], "name": t[1]} for t in tags],
+        "tags": [{"id": t[0], "name": t[1], "patterns": t[3]} for t in tags],
         "games": [{"id": g[0], "name": g[1], "patterns": g[3]} for g in games],
         "fields": ["id", "ts", "score", "likes", "dislikes", "tags", "games", "has_text", "hours", "foreign"],
         "rows": rows,

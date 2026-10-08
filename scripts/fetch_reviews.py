@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 CarX Street — сборщик отзывов Steam для дэшборда.
-Версия: 1.6 (2026-10-05) — переводится и самый полезный отзыв
+Версия: 1.7 (2026-10-08) — в data.json добавлены паттерны тем (tags_meta) для подсветки на странице
 
 Что делает:
   1. Берёт сводку по отзывам (все типы покупок, все языки) и отдельно по каждому языку,
@@ -22,7 +22,7 @@ import urllib.request
 from collections import Counter, defaultdict
 from datetime import datetime, timedelta, timezone
 
-SCRIPT_VERSION = "1.6"
+SCRIPT_VERSION = "1.7"
 APP_ID = int(os.environ.get("APP_ID", "1114150"))
 TZ = timezone(timedelta(hours=3))  # Москва — границы дней считаем по МСК
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -478,6 +478,8 @@ def main():
     # Срез «все языки» лежит на верхнем уровне (summary, free, daily30, tags, отзывы…)
     data.update(build_slice(reviews, total, tags))
     data["games_meta"] = [{"id": gid, "name": name, "patterns": pats} for gid, name, _, pats in GAMES]
+    with open(TAGS_PATH, encoding="utf-8") as f:
+        data["tags_meta"] = [{"id": t["id"], "name": t["name"], "patterns": t["patterns"]} for t in json.load(f)["tags"]]
 
     log("Перевожу отзывы на русский…")
     for key in TRANSLATE_SECTIONS:
