@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- CarX Street · дэшборд отзывов · версия 1.8 (2026-10-05) — вкладка VK Play, перевод самого полезного отзыва Steam; вкладки Steam / PlayStation / Xbox / VK Play, Oswald, тёмная тема -->
+<!-- CarX Street · дэшборд отзывов · версия 1.9 (2026-10-08) — выбор темы: отзывы с темой и динамика упоминаний (Steam, Xbox, VK Play); вкладки Steam / PlayStation / Xbox / VK Play -->
 <html lang="ru" data-theme="dark">
 <head>
 <meta charset="UTF-8">
@@ -210,7 +210,16 @@
   .cloud.pos { background: var(--pos-soft); }
   .cloud.neg { background: var(--neg-soft); }
   .cloud-col, .grid-2e > *, .grid-2 > * { min-width: 0; }
-  .cloud .w { font-weight: 600; cursor: default; overflow-wrap: anywhere; transition: opacity .15s; }
+  .cloud .w { font-weight: 600; cursor: pointer; overflow-wrap: anywhere; transition: opacity .15s; border-radius: 4px; }
+  .cloud .w:focus-visible { outline: 2px solid var(--accent); }
+  .cloud.has-sel .w:not(.sel) { opacity: .4; }
+  .cloud .w.sel { opacity: 1; text-decoration: underline; text-underline-offset: 3px; }
+  #tagTable tbody tr[data-t], #xbTagTable tbody tr[data-t], #vkTagTable tbody tr[data-t] { cursor: pointer; }
+  #tagTable.has-sel tbody tr.sel td, #xbTagTable.has-sel tbody tr.sel td, #vkTagTable.has-sel tbody tr.sel td { background: var(--accent-soft); font-weight: 600; }
+  .topic-panel { border-color: var(--accent); }
+  .topic-more { margin-top: 6px; width: 100%; }
+  #topicCards, #xbTopicCards, #vkTopicCards { grid-template-columns: repeat(4, 1fr); }
+  @media (max-width: 640px) { #topicCards, #xbTopicCards, #vkTopicCards { grid-template-columns: repeat(2, 1fr); } }
   .cloud .w sup { font-size: 11px; font-weight: 500; color: var(--text-muted); margin-left: 2px; }
   .cloud:hover .w { opacity: .45; }
   .cloud .w:hover { opacity: 1; }
@@ -345,7 +354,7 @@
 
   <div class="panel">
     <div class="panel-head">
-      <h2>О чём пишут <span class="sub" id="tagSub">темы и число отзывов, где они упоминаются</span></h2>
+      <h2>О чём пишут <span class="sub" id="tagSub">темы и число отзывов, где они упоминаются · нажмите на тему, чтобы увидеть отзывы и динамику</span></h2>
       <div class="seg" id="tagPeriod"><button data-p="all" class="on">За всё время</button><button data-p="d30">30 дней</button></div>
     </div>
     <p class="note">Темы идут от самых упоминаемых к менее упоминаемым. Один отзыв засчитывается в тему один раз. Тема в положительном отзыве — это не всегда похвала (например, «отличная игра, но оптимизация хромает»), поэтому смотрите на долю упоминаний в отрицательных отзывах в таблице ниже.</p>
@@ -354,7 +363,7 @@
       <div class="cloud-col"><h3><span class="dot" style="background:var(--neg)"></span>В отрицательных отзывах</h3><div class="cloud neg" id="cloudNeg"></div></div>
     </div>
     <details class="tbl" open>
-      <summary>Таблица по темам <span class="sub" style="color:var(--text-muted)">· нажмите на заголовок колонки, чтобы пересортировать</span></summary>
+      <summary>Таблица по темам <span class="sub" style="color:var(--text-muted)">· нажмите на заголовок колонки, чтобы пересортировать, на тему — чтобы увидеть отзывы</span></summary>
       <div class="tbl-wrap"><table id="tagTable">
         <thead><tr>
           <th data-k="name">Тема</th>
@@ -366,6 +375,20 @@
         <tbody></tbody>
       </table></div>
     </details>
+  </div>
+
+  <div class="panel topic-panel" id="topicPanel" hidden>
+    <div class="panel-head">
+      <h2 id="topicTitle">Тема</h2>
+      <button type="button" class="btn-ghost" id="topicClose">Закрыть тему ×</button>
+    </div>
+    <div class="mini-cards" id="topicCards"></div>
+    <h3 class="sub-h" id="topicChartTitle" style="margin-top:14px"></h3>
+    <div class="legend"><span style="--c:var(--pos)">В положительных</span><span style="--c:var(--neg)">В отрицательных</span></div>
+    <div class="chart-box" style="height:200px"><canvas id="topicChart" aria-label="Упоминания темы по дням"></canvas></div>
+    <h3 class="sub-h" id="topicListTitle" style="margin-top:18px"></h3>
+    <div id="topicList"></div>
+    <button type="button" class="btn-ghost topic-more" id="topicMore" hidden>Показать ещё</button>
   </div>
 
   <div class="panel" id="gamesPanel">
@@ -456,7 +479,7 @@
   </div>
 
   <div class="panel">
-    <h2>О чём пишут <span class="sub">темы и число отзывов, где они упоминаются</span></h2>
+    <h2>О чём пишут <span class="sub">темы и число отзывов, где они упоминаются · нажмите на тему, чтобы увидеть отзывы и динамику</span></h2>
     <div class="grid-2e">
       <div class="cloud-col"><h3><span class="dot" style="background:var(--pos)"></span>В положительных (4–5 ★)</h3><div class="cloud pos" id="xbCloudPos"></div></div>
       <div class="cloud-col"><h3><span class="dot" style="background:var(--neg)"></span>В отрицательных (1–2 ★)</h3><div class="cloud neg" id="xbCloudNeg"></div></div>
@@ -467,6 +490,20 @@
         <th data-k="name">Тема</th><th data-k="pos" class="num">4–5 ★</th><th data-k="neu" class="num">3 ★</th><th data-k="neg" class="num">1–2 ★</th><th data-k="total" class="num">Всего</th><th data-k="share">Доля в 1–2 ★</th>
       </tr></thead><tbody></tbody></table></div>
     </details>
+  </div>
+
+  <div class="panel topic-panel" id="xbTopicPanel" hidden>
+    <div class="panel-head">
+      <h2 id="xbTopicTitle">Тема</h2>
+      <button type="button" class="btn-ghost" id="xbTopicClose">Закрыть тему ×</button>
+    </div>
+    <div class="mini-cards" id="xbTopicCards"></div>
+    <h3 class="sub-h" id="xbTopicChartTitle" style="margin-top:14px"></h3>
+    <div class="legend"><span style="--c:var(--pos)">4–5 ★</span><span style="--c:var(--neu)">3 ★</span><span style="--c:var(--neg)">1–2 ★</span></div>
+    <div class="chart-box" style="height:200px"><canvas id="xbTopicChart" aria-label="Упоминания темы Xbox по дням"></canvas></div>
+    <h3 class="sub-h" id="xbTopicListTitle" style="margin-top:18px"></h3>
+    <div id="xbTopicList"></div>
+    <button type="button" class="btn-ghost topic-more" id="xbTopicMore" hidden>Показать ещё</button>
   </div>
 
   <div class="panel">
@@ -531,7 +568,7 @@
   </div>
 
   <div class="panel">
-    <h2>О чём пишут <span class="sub">темы и число отзывов, где они упоминаются</span></h2>
+    <h2>О чём пишут <span class="sub">темы и число отзывов, где они упоминаются · нажмите на тему, чтобы увидеть отзывы и динамику</span></h2>
     <div class="grid-2e">
       <div class="cloud-col"><h3><span class="dot" style="background:var(--pos)"></span>В положительных (6–10)</h3><div class="cloud pos" id="vkCloudPos"></div></div>
       <div class="cloud-col"><h3><span class="dot" style="background:var(--neg)"></span>В отрицательных (1–4)</h3><div class="cloud neg" id="vkCloudNeg"></div></div>
@@ -542,6 +579,20 @@
         <th data-k="name">Тема</th><th data-k="pos" class="num">6–10</th><th data-k="neu" class="num">5</th><th data-k="neg" class="num">1–4</th><th data-k="total" class="num">Всего</th><th data-k="share">Доля в 1–4</th>
       </tr></thead><tbody></tbody></table></div>
     </details>
+  </div>
+
+  <div class="panel topic-panel" id="vkTopicPanel" hidden>
+    <div class="panel-head">
+      <h2 id="vkTopicTitle">Тема</h2>
+      <button type="button" class="btn-ghost" id="vkTopicClose">Закрыть тему ×</button>
+    </div>
+    <div class="mini-cards" id="vkTopicCards"></div>
+    <h3 class="sub-h" id="vkTopicChartTitle" style="margin-top:14px"></h3>
+    <div class="legend"><span style="--c:var(--pos)">6–10</span><span style="--c:var(--neu)">5</span><span style="--c:var(--neg)">1–4</span></div>
+    <div class="chart-box" style="height:200px"><canvas id="vkTopicChart" aria-label="Упоминания темы VK Play по дням"></canvas></div>
+    <h3 class="sub-h" id="vkTopicListTitle" style="margin-top:18px"></h3>
+    <div id="vkTopicList"></div>
+    <button type="button" class="btn-ghost topic-more" id="vkTopicMore" hidden>Показать ещё</button>
   </div>
 
   <div class="panel">
@@ -571,7 +622,7 @@
 </div></div></div>
 
 <script>
-/* CarX Street · дэшборд отзывов · версия 1.8 */
+/* CarX Street · дэшборд отзывов · версия 1.9 */
 if (window.Chart && Chart.defaults && Chart.defaults.font) Chart.defaults.font.family = '"Oswald", "Arial Narrow", sans-serif';
 const fmt = n => (n ?? 0).toLocaleString('ru-RU');
 const pctTxt = v => v == null ? '—' : v.toFixed(1).replace('.', ',') + '%';
@@ -747,7 +798,8 @@ function renderCloud(el, items, key) {
   const big = window.innerWidth < 560 ? 14 : 22;
   const scale = v => max === min ? 12 + big : 12 + big * Math.sqrt((v - min) / (max - min));
   el.innerHTML = list.map(t =>
-    `<span class="w" style="font-size:${scale(t[key]).toFixed(1)}px" title="${esc(t.name)}: ${fmt(t[key])} отзывов">${esc(t.name)}<sup>${fmt(t[key])}</sup></span>`).join('');
+    `<span class="w${t.id === openTopic ? ' sel' : ''}" data-t="${esc(t.id)}" role="button" tabindex="0" style="font-size:${scale(t[key]).toFixed(1)}px" title="${esc(t.name)}: ${fmt(t[key])} отзывов · нажмите, чтобы посмотреть отзывы">${esc(t.name)}<sup>${fmt(t[key])}</sup></span>`).join('');
+  el.classList.toggle('has-sel', !!openTopic);
 }
 function renderTags(d) {
   const src = d.period ? d.tags.all : (d.tags[tagPeriod] || []);
@@ -758,7 +810,8 @@ function renderTags(d) {
     const x = a[sortKey], y = b[sortKey];
     return (typeof x === 'string' ? x.localeCompare(y, 'ru') : x - y) * sortDir || b.total - a.total;
   });
-  document.querySelector('#tagTable tbody').innerHTML = rows.map(t => `<tr>
+  document.getElementById('tagTable').classList.toggle('has-sel', !!openTopic);
+  document.querySelector('#tagTable tbody').innerHTML = rows.map(t => `<tr data-t="${esc(t.id)}"${t.id === openTopic ? ' class="sel"' : ''} title="Нажмите, чтобы посмотреть отзывы с темой">
     <td>${esc(t.name)}</td><td class="num">${fmt(t.pos)}</td><td class="num">${fmt(t.neg)}</td><td class="num">${fmt(t.total)}</td>
     <td><div class="share"><div class="t"><div class="f" style="width:${t.share.toFixed(1)}%"></div></div><div class="v">${Math.round(t.share)}%</div></div></td></tr>`).join('')
     || '<tr><td colspan="5" class="empty-note">Нет упоминаний</td></tr>';
@@ -832,6 +885,121 @@ function translateMissing(list, containerId, token, big) {
       wireReviews(root);
     });
   });
+}
+
+/* ---------- Выбранная тема: отзывы и динамика упоминаний (v1.9) ---------- */
+const TOPIC_PAGE = 20;
+let openTopic = null, topicShown = TOPIC_PAGE, topicToken = 0, topicRx = null;
+function topicRegex(list, id) {
+  // паттерны тем (Python regex) → JS: \b и \w с поддержкой кириллицы
+  const t = (list || []).find(x => x.id === id);
+  if (!t || !t.patterns) return null;
+  try { return new RegExp(t.patterns.map(p => '(?:' + p.replaceAll('\\b', GB).replaceAll('\\w', GW) + ')').join('|'), 'giu'); }
+  catch (e) { return null; }
+}
+function markTopic(root, rx) {
+  if (!rx) return;
+  root.querySelectorAll('.text, .orig').forEach(x => { if (x.dataset.hl) return; x.dataset.hl = '1'; rx.lastIndex = 0; x.innerHTML = x.innerHTML.replace(rx, m => `<mark>${m}</mark>`); });
+}
+function selectTopic(id) {
+  openTopic = openTopic === id ? null : id;
+  topicShown = TOPIC_PAGE;
+  document.querySelectorAll('#cloudPos .w, #cloudNeg .w, #tagTable tbody tr').forEach(el => el.classList.toggle('sel', !!openTopic && el.dataset.t === openTopic));
+  document.querySelectorAll('#cloudPos, #cloudNeg, #tagTable').forEach(el => el.classList.toggle('has-sel', !!openTopic));
+  renderTopic(true);
+}
+// «сегодня» для Steam — дата сбора данных, чтобы 30 дней совпадали с облаком тем
+const dataNow = () => (Date.parse(DATA.generated_at) / 1000) || (Date.now() / 1000);
+function topicRange() {
+  // период из фильтра; без периода: «30 дней» в переключателе тем ограничивает и список
+  const now = dataNow();
+  if (currentPeriod) return { from: currentPeriod.from ? tsOfIso(currentPeriod.from) : -Infinity, to: currentPeriod.to ? tsOfIso(currentPeriod.to) + 86399 : Infinity, listAll: false };
+  return { from: tagPeriod === 'd30' ? tsOfIso(isoOf(now - 29 * 86400)) : -Infinity, to: Infinity, listAll: tagPeriod !== 'd30' };
+}
+function steamCardOf(ix, r) {
+  const t = (TXT.get(isoOf(r[F.ts]).slice(0, 7)) || {})[r[F.id]] || ['', '', '', 0];
+  const code = ix.langs[r[F.lang]];
+  return { id: r[F.id], positive: !!r[F.up], language: code, language_ru: LANG_RU[code] || code, text: t[0], created: r[F.ts],
+    votes_up: r[F.vu], votes_funny: r[F.vf], playtime_h: t[3], free: !!r[F.free], author: t[1],
+    url: `https://steamcommunity.com/profiles/${(BigInt(76561197960265728) + BigInt(parseInt(t[2] || '0', 36))).toString()}/recommended/${DATA.app?.id || 1114150}/` };
+}
+async function renderTopic(scroll) {
+  const panel = document.getElementById('topicPanel');
+  if (!openTopic) { panel.hidden = true; return; }
+  const token = ++topicToken;
+  const meta = (DATA.tags_meta || DATA.tags.all || []).find(t => t.id === openTopic) || { name: openTopic };
+  panel.hidden = false;
+  document.getElementById('topicTitle').innerHTML = `Тема: ${esc(meta.name)} <span class="sub">отзывы, где она упоминается${currentLang ? ' · ' + esc(langName(currentLang).toLowerCase()) : ''}${currentPeriod ? ' · ' + esc(periodText(currentPeriod)) : tagPeriod === 'd30' ? ' · последние 30 дней' : ''}</span>`;
+  document.getElementById('topicList').innerHTML = '<div class="empty-note">Загружаю отзывы…</div>';
+  if (scroll) panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  let ix;
+  try { ix = await loadIndex(); } catch (e) { document.getElementById('topicList').innerHTML = `<div class="err">Не удалось загрузить отзывы: ${esc(e.message)}</div>`; return; }
+  if (token !== topicToken) return;
+  const bi = ix.tags.findIndex(t => t.id === openTopic); if (bi < 0) { panel.hidden = true; return; }
+  const bit = 2 ** bi, rg = topicRange();
+  const base = ix.rows.filter(r => Math.floor(r[F.tags] / bit) % 2 && (!currentLang || ix.langs[r[F.lang]] === currentLang));
+  const rows = base.filter(r => r[F.ts] >= rg.from && r[F.ts] <= rg.to).sort((a, b) => b[F.ts] - a[F.ts]);
+  const pos = rows.filter(r => r[F.up]).length, neg = rows.length - pos;
+  document.getElementById('topicCards').innerHTML = mini('Отзывов с темой', fmt(rows.length)) +
+    mini('<span style="color:var(--pos)">В положительных</span>', fmt(pos)) + mini('<span style="color:var(--neg)">В отрицательных</span>', fmt(neg)) +
+    mini('Доля в отрицательных', rows.length ? Math.round(100 * neg / rows.length) + '%' : '—');
+
+  // динамика: выбранный период (по дням, > 90 дней — по неделям) или последние 30 дней
+  const today = isoOf(dataNow());
+  let fIso, tIso;
+  if (currentPeriod) { fIso = currentPeriod.from || (rows.length ? isoOf(rows[rows.length - 1][F.ts]) : today); tIso = currentPeriod.to || isoOf(Date.now() / 1000); }
+  else { fIso = isoOf(dataNow() - 29 * 86400); tIso = today; }
+  const days = Math.round((Date.parse(tIso) - Date.parse(fIso)) / 864e5) + 1, weekly = days > 90;
+  const byDay = {};
+  for (const r of base) { const k = isoOf(r[F.ts]); if (k < fIso || k > tIso) continue; (byDay[k] = byDay[k] || [0, 0])[r[F.up] ? 0 : 1]++; }
+  const series = [];
+  for (let t = Date.parse(fIso); t <= Date.parse(tIso); t += 864e5) {
+    const k = new Date(t).toISOString().slice(0, 10), v = byDay[k] || [0, 0], wd = (new Date(t).getUTCDay() + 6) % 7, last = series[series.length - 1];
+    if (!weekly || !last || wd === 0) series.push({ date: k, end: k, label: dayLabel(k), pos: v[0], neg: v[1] });
+    else { last.pos += v[0]; last.neg += v[1]; last.end = k; }
+  }
+  if (weekly) series.forEach(s => { s.title = `Неделя ${dayLabel(s.date)} – ${dayLabel(s.end)}`; });
+  const inChart = series.reduce((a, s) => a + s.pos + s.neg, 0);
+  document.getElementById('topicChartTitle').textContent = currentPeriod
+    ? `Упоминания по ${weekly ? 'неделям' : 'дням'} за период · всего ${fmt(inChart)}`
+    : `Упоминания по дням за последние 30 дней · всего ${fmt(inChart)}`;
+  stackedChart('topicChart', series);
+
+  // список: все отзывы с темой, порциями по 20
+  const withText = rows.filter(r => r[F.txt]);
+  const page = withText.slice(0, topicShown);
+  await loadTexts(page.map(r => isoOf(r[F.ts]).slice(0, 7)));
+  if (token !== topicToken) return;
+  topicRx = topicRegex(DATA.tags_meta, openTopic);
+  const cards = page.map(r => steamCardOf(ix, r));
+  document.getElementById('topicListTitle').textContent = `Отзывы с темой — ${fmt(withText.length)}, сначала новые`;
+  const list = document.getElementById('topicList');
+  list.innerHTML = cards.length ? cards.map(c => reviewHtml(c)).join('') : '<div class="empty-note">Нет отзывов с этой темой</div>';
+  markTopic(list, topicRx); wireReviews(list);
+  const more = document.getElementById('topicMore'), left = withText.length - page.length;
+  more.hidden = left <= 0;
+  more.textContent = `Показать ещё ${fmt(Math.min(TOPIC_PAGE, left))} (осталось ${fmt(left)})`;
+  cards.forEach((c, i) => {
+    if (c.language === 'russian' || !/\p{L}/u.test(c.text || '')) return;
+    translateRu(c.text, c.language).then(tr => {
+      if (!tr || token !== topicToken) return;
+      c.text_ru = tr;
+      const el = list.querySelectorAll('.review')[i]; if (!el) return;
+      el.outerHTML = reviewHtml(c);
+      markTopic(list, topicRx); wireReviews(list);
+    });
+  });
+}
+function initTopic() {
+  const pick = e => { const el = e.target.closest('[data-t]'); if (el) selectTopic(el.dataset.t); };
+  ['cloudPos', 'cloudNeg'].forEach(id => {
+    const c = document.getElementById(id);
+    c.addEventListener('click', pick);
+    c.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(e); } });
+  });
+  document.querySelector('#tagTable tbody').addEventListener('click', pick);
+  document.getElementById('topicClose').addEventListener('click', () => { const id = openTopic; selectTopic(id); document.getElementById('cloudPos').closest('.panel').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+  document.getElementById('topicMore').addEventListener('click', () => { topicShown += TOPIC_PAGE; renderTopic(false); });
 }
 
 /* ---------- Упоминания других игр ---------- */
@@ -936,7 +1104,7 @@ function renderMeta(d) {
     При выборе периода все цифры считаются по загруженным отзывам за эти даты (по московскому времени), поэтому могут немного расходиться со сводкой Steam.
     Темы определяются по словарю ключевых слов на ${d.languages?.length || ''}+ языках (файл <code>scripts/tags.json</code>, его можно дополнять).
     Загружено ${fmt(d.fetched?.count)} текстов отзывов (${pctTxt(d.fetched?.coverage)} от общего числа) — по ним считаются темы, динамика и бесплатные копии.</p>
-    <p>Дэшборд v1.8 · сборщик v${esc(d.version)}</p>`;
+    <p>Дэшборд v1.9 · сборщик v${esc(d.version)}</p>`;
 }
 
 /* ---------- Период ---------- */
@@ -1123,6 +1291,7 @@ async function renderAll() {
   const name = currentLang ? langName(currentLang) : null;
   renderFilterBar(sl.summary.total);
   renderCards(sl, name); renderPeriods(sl); renderLangs(sl.period ? sl : DATA); renderTags(sl); renderGames(sl); renderReviews(sl);
+  if (openTopic) { topicShown = TOPIC_PAGE; renderTopic(false); }
   document.getElementById('periodReset').disabled = !currentPeriod;
 }
 let filterToken = 0, lastSlice = null;
@@ -1203,7 +1372,9 @@ loadData().then(d => {
     tagPeriod = b.dataset.p;
     document.querySelectorAll('#tagPeriod button').forEach(x => x.classList.toggle('on', x === b));
     renderTags(lastSlice || sliceOf(currentLang));
+    if (openTopic) { topicShown = TOPIC_PAGE; renderTopic(false); }
   }));
+  initTopic();
   document.querySelectorAll('#tagTable th').forEach(th => th.addEventListener('click', async () => {
     const k = th.dataset.k;
     if (sortKey === k) sortDir = -sortDir; else { sortKey = k; sortDir = k === 'name' ? 1 : -1; }
@@ -1371,6 +1542,7 @@ function xbInitControls() {
     document.getElementById('xbPeriodMsg').hidden = true; xbSetFilters(xbMarket, null);
   });
   document.querySelectorAll('#xbTagTable th').forEach(th => th.addEventListener('click', () => { xbTagSort = th.dataset.k; xbRender(); }));
+  xbInitTopic();
 }
 function xbRowsFiltered(withMarket = true) {
   const from = xbPeriod?.from ? tsOfIso(xbPeriod.from) : -Infinity, to = xbPeriod?.to ? tsOfIso(xbPeriod.to) + 86399 : Infinity;
@@ -1522,18 +1694,18 @@ function xbRender() {
   const tags = XB.tags.map((t, i) => {
     let p = 0, z = 0, g = 0; const bit = 2 ** i;
     for (const r of rows) if (Math.floor(r[XF.tags] / bit) % 2) { r[XF.stars] >= 4 ? p++ : r[XF.stars] <= 2 ? g++ : z++; }
-    return { name: t.name, pos: p, neu: z, neg: g, total: p + z + g, share: (p + z + g) ? 100 * g / (p + z + g) : 0 };
+    return { id: t.id, name: t.name, pos: p, neu: z, neg: g, total: p + z + g, share: (p + z + g) ? 100 * g / (p + z + g) : 0 };
   }).filter(t => t.total);
   const cloud = (el, key) => {
     const list = tags.filter(t => t[key] > 0).sort((a, b) => b[key] - a[key]);
     if (!list.length) { el.innerHTML = '<div class="empty-note">Нет упоминаний</div>'; return; }
     const max = list[0][key], min = list[list.length - 1][key], big = window.innerWidth < 560 ? 14 : 22;
-    el.innerHTML = list.map(t => `<span class="w" style="font-size:${(max === min ? 12 + big : 12 + big * Math.sqrt((t[key] - min) / (max - min))).toFixed(1)}px" title="${esc(t.name)}: ${fmt(t[key])}">${esc(t.name)}<sup>${fmt(t[key])}</sup></span>`).join('');
+    el.innerHTML = list.map(t => `<span class="w${t.id === xbTopic ? ' sel' : ''}" data-t="${esc(t.id)}" role="button" tabindex="0" style="font-size:${(max === min ? 12 + big : 12 + big * Math.sqrt((t[key] - min) / (max - min))).toFixed(1)}px" title="${esc(t.name)}: ${fmt(t[key])} · нажмите, чтобы посмотреть отзывы">${esc(t.name)}<sup>${fmt(t[key])}</sup></span>`).join('');
   };
   cloud(document.getElementById('xbCloudPos'), 'pos'); cloud(document.getElementById('xbCloudNeg'), 'neg');
   const sk = xbTagSort;
   document.querySelector('#xbTagTable tbody').innerHTML = tags.sort((a, b) => sk === 'name' ? a.name.localeCompare(b.name, 'ru') : (b[sk] - a[sk]) || b.total - a.total)
-    .map(t => `<tr><td>${esc(t.name)}</td><td class="num">${fmt(t.pos)}</td><td class="num">${fmt(t.neu)}</td><td class="num">${fmt(t.neg)}</td><td class="num">${fmt(t.total)}</td>
+    .map(t => `<tr data-t="${esc(t.id)}"${t.id === xbTopic ? ' class="sel"' : ''} title="Нажмите, чтобы посмотреть отзывы с темой"><td>${esc(t.name)}</td><td class="num">${fmt(t.pos)}</td><td class="num">${fmt(t.neu)}</td><td class="num">${fmt(t.neg)}</td><td class="num">${fmt(t.total)}</td>
       <td><div class="share"><div class="t"><div class="f" style="width:${t.share.toFixed(1)}%"></div></div><div class="v">${Math.round(t.share)}%</div></div></td></tr>`).join('')
     || '<tr><td colspan="6" class="empty-note">Нет упоминаний</td></tr>';
 
@@ -1570,7 +1742,73 @@ function xbRender() {
   xbList('xbRecentPos', withText.filter(r => r[XF.stars] >= 4).slice(0, 10).map(xbCard));
   xbList('xbRecentNeg', withText.filter(r => r[XF.stars] <= 2).slice(0, 10).map(xbCard));
 
+  xbRenderTopic(false);
   document.getElementById('xbMeta').innerHTML = `Источник: открытые данные Microsoft Store по игре ${esc(XB.product_id)} (Xbox). Оценки и отзывы в магазине Xbox привязаны к стране магазина, поэтому собираются по каждой стране отдельно (${XB.markets.length} стран с оценками или отзывами). «Оценок в магазине» — все оценки, включая поставленные без текста; остальные блоки считаются по текстовым отзывам. 4–5 ★ — положительные, 3 ★ — нейтральные, 1–2 ★ — отрицательные. Обновлено ${esc(new Date(XB.generated_at).toLocaleString('ru-RU', { timeZone: 'Europe/Moscow', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }))} МСК · сборщик консолей v${esc(XB.version || '')}.`;
+}
+
+/* ---------- Xbox: выбранная тема (v1.9) ---------- */
+let xbTopic = null, xbTopicShown = TOPIC_PAGE, xbTopicToken = 0;
+function xbSelectTopic(id) {
+  xbTopic = xbTopic === id ? null : id; xbTopicShown = TOPIC_PAGE;
+  xbRenderTopic(true);
+}
+function xbRenderTopic(scroll) {
+  const panel = document.getElementById('xbTopicPanel');
+  document.querySelectorAll('#xbCloudPos .w, #xbCloudNeg .w, #xbTagTable tbody tr').forEach(el => el.classList.toggle('sel', !!xbTopic && el.dataset.t === xbTopic));
+  document.querySelectorAll('#xbCloudPos, #xbCloudNeg, #xbTagTable').forEach(el => el.classList.toggle('has-sel', !!xbTopic));
+  if (!xbTopic || !XB) { panel.hidden = true; return; }
+  const token = ++xbTopicToken;
+  const ti = XB.tags.findIndex(t => t.id === xbTopic); if (ti < 0) { panel.hidden = true; return; }
+  const bit = 2 ** ti, has = r => Math.floor(r[XF.tags] / bit) % 2;
+  const mk = xbMarket ? XB.markets.find(m => m.code === xbMarket) : null;
+  const rows = xbRowsFiltered().filter(has).sort((a, b) => b[XF.ts] - a[XF.ts]);
+  panel.hidden = false;
+  document.getElementById('xbTopicTitle').innerHTML = `Тема: ${esc(XB.tags[ti].name)} <span class="sub">отзывы, где она упоминается${mk ? ' · ' + esc(mk.name) : ''}${xbPeriod ? ' · ' + esc(periodText(xbPeriod)) : ''}</span>`;
+  const pos = rows.filter(r => r[XF.stars] >= 4).length, neg = rows.filter(r => r[XF.stars] <= 2).length, neu = rows.length - pos - neg;
+  document.getElementById('xbTopicCards').innerHTML = mini('Отзывов с темой', fmt(rows.length)) +
+    mini('<span style="color:var(--pos)">4–5 ★</span>', fmt(pos)) + mini('<span style="color:var(--neu)">3 ★</span>', fmt(neu)) + mini('<span style="color:var(--neg)">1–2 ★</span>', fmt(neg));
+  // динамика: выбранный период или последние 30 дней (с учётом страны)
+  const today = isoOf(Date.now() / 1000);
+  let S;
+  if (xbPeriod) S = xbSeries(rows, xbPeriod.from || (rows.length ? isoOf(rows[rows.length - 1][XF.ts]) : today), xbPeriod.to || today);
+  else {
+    const mi = xbMarket ? XB.markets.findIndex(m => m.code === xbMarket) : -1;
+    S = xbSeries(XB.rows.filter(r => has(r) && (mi < 0 || r[XF.market] === mi)), isoOf(Date.now() / 1000 - 29 * 86400), today);
+  }
+  const inChart = S.series.reduce((a, s) => a + s.pos + s.neu + s.neg, 0);
+  document.getElementById('xbTopicChartTitle').textContent = xbPeriod
+    ? `Упоминания по ${S.weekly ? 'неделям' : 'дням'} за период · всего ${fmt(inChart)}`
+    : `Упоминания по дням за последние 30 дней · всего ${fmt(inChart)}`;
+  xbStacked('xbTopicChart', S.series);
+  // список
+  const withText = rows.filter(r => r[XF.txt]), page = withText.slice(0, xbTopicShown).map(xbCard);
+  document.getElementById('xbTopicListTitle').textContent = `Отзывы с темой — ${fmt(withText.length)}, сначала новые`;
+  const rx = topicRegex(XB.tags, xbTopic), list = document.getElementById('xbTopicList');
+  const draw = () => { list.innerHTML = page.length ? page.map(xbReviewHtml).join('') : '<div class="empty-note">Нет отзывов с этой темой</div>'; markTopic(list, rx); wireReviews(list); };
+  draw();
+  const more = document.getElementById('xbTopicMore'), left = withText.length - page.length;
+  more.hidden = left <= 0; more.textContent = `Показать ещё ${fmt(Math.min(TOPIC_PAGE, left))} (осталось ${fmt(left)})`;
+  page.forEach((c, i) => {
+    if (!/\p{L}/u.test(c.text || '')) return;
+    translateRu(c.text, 'auto').then(tr => {
+      if (!tr || token !== xbTopicToken) return;
+      c.text_ru = tr;
+      const el = list.querySelectorAll('.review')[i]; if (!el) return;
+      el.outerHTML = xbReviewHtml(c); markTopic(list, rx); wireReviews(list);
+    });
+  });
+  if (scroll) panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+function xbInitTopic() {
+  const pick = e => { const el = e.target.closest('[data-t]'); if (el) xbSelectTopic(el.dataset.t); };
+  ['xbCloudPos', 'xbCloudNeg'].forEach(id => {
+    const c = document.getElementById(id);
+    c.addEventListener('click', pick);
+    c.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(e); } });
+  });
+  document.querySelector('#xbTagTable tbody').addEventListener('click', pick);
+  document.getElementById('xbTopicClose').addEventListener('click', () => { xbSelectTopic(xbTopic); document.getElementById('xbCloudPos').closest('.panel').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+  document.getElementById('xbTopicMore').addEventListener('click', () => { xbTopicShown += TOPIC_PAGE; xbRenderTopic(false); });
 }
 
 /* ================== VK Play (v1.8) ================== */
@@ -1617,6 +1855,7 @@ function vkInitControls() {
     document.getElementById('vkPeriodMsg').hidden = true; vkSetPeriod(null);
   });
   document.querySelectorAll('#vkTagTable th').forEach(th => th.addEventListener('click', () => { vkTagSort = th.dataset.k; vkRender(); }));
+  vkInitTopic();
 }
 function vkRows() {
   const from = vkPeriod?.from ? tsOfIso(vkPeriod.from) : -Infinity, to = vkPeriod?.to ? tsOfIso(vkPeriod.to) + 86399 : Infinity;
@@ -1760,18 +1999,18 @@ function vkRender() {
   const tags = VK.tags.map((t, i) => {
     let p = 0, z = 0, g = 0; const bit = 2 ** i;
     for (const r of rated) if (Math.floor(r[VF.tags] / bit) % 2) { const q = vkGroup(r[VF.score]); q === 'pos' ? p++ : q === 'neg' ? g++ : z++; }
-    return { name: t.name, pos: p, neu: z, neg: g, total: p + z + g, share: (p + z + g) ? 100 * g / (p + z + g) : 0 };
+    return { id: t.id, name: t.name, pos: p, neu: z, neg: g, total: p + z + g, share: (p + z + g) ? 100 * g / (p + z + g) : 0 };
   }).filter(t => t.total);
   const cloud = (el, key) => {
     const list = tags.filter(t => t[key] > 0).sort((a, b) => b[key] - a[key]);
     if (!list.length) { el.innerHTML = '<div class="empty-note">Нет упоминаний</div>'; return; }
     const max = list[0][key], min = list[list.length - 1][key], big = window.innerWidth < 560 ? 14 : 22;
-    el.innerHTML = list.map(t => `<span class="w" style="font-size:${(max === min ? 12 + big : 12 + big * Math.sqrt((t[key] - min) / (max - min))).toFixed(1)}px" title="${esc(t.name)}: ${fmt(t[key])}">${esc(t.name)}<sup>${fmt(t[key])}</sup></span>`).join('');
+    el.innerHTML = list.map(t => `<span class="w${t.id === vkTopic ? ' sel' : ''}" data-t="${esc(t.id)}" role="button" tabindex="0" style="font-size:${(max === min ? 12 + big : 12 + big * Math.sqrt((t[key] - min) / (max - min))).toFixed(1)}px" title="${esc(t.name)}: ${fmt(t[key])} · нажмите, чтобы посмотреть отзывы">${esc(t.name)}<sup>${fmt(t[key])}</sup></span>`).join('');
   };
   cloud(document.getElementById('vkCloudPos'), 'pos'); cloud(document.getElementById('vkCloudNeg'), 'neg');
   const sk = vkTagSort;
   document.querySelector('#vkTagTable tbody').innerHTML = tags.sort((a, b) => sk === 'name' ? a.name.localeCompare(b.name, 'ru') : (b[sk] - a[sk]) || b.total - a.total)
-    .map(t => `<tr><td>${esc(t.name)}</td><td class="num">${fmt(t.pos)}</td><td class="num">${fmt(t.neu)}</td><td class="num">${fmt(t.neg)}</td><td class="num">${fmt(t.total)}</td>
+    .map(t => `<tr data-t="${esc(t.id)}"${t.id === vkTopic ? ' class="sel"' : ''} title="Нажмите, чтобы посмотреть отзывы с темой"><td>${esc(t.name)}</td><td class="num">${fmt(t.pos)}</td><td class="num">${fmt(t.neu)}</td><td class="num">${fmt(t.neg)}</td><td class="num">${fmt(t.total)}</td>
       <td><div class="share"><div class="t"><div class="f" style="width:${t.share.toFixed(1)}%"></div></div><div class="v">${Math.round(t.share)}%</div></div></td></tr>`).join('')
     || '<tr><td colspan="6" class="empty-note">Нет упоминаний</td></tr>';
 
@@ -1807,7 +2046,64 @@ function vkRender() {
   vkList('vkRecentPos', withText.filter(r => vkGroup(r[VF.score]) === 'pos').slice(0, 10).map(vkCard));
   vkList('vkRecentNeg', withText.filter(r => vkGroup(r[VF.score]) === 'neg').slice(0, 10).map(vkCard));
 
+  vkRenderTopic(false);
   document.getElementById('vkMeta').innerHTML = `Источник: открытые данные <a href="${esc(VK.reviews_url)}" target="_blank" rel="noopener">страницы отзывов VK Play ↗</a>. Шкала VK Play — от 1 до 10; группы как у самого VK Play: 6–10 — положительные, 5 — нейтральные, 1–4 — отрицательные. Карточки без выбранного периода — сводка VK Play (в ней учтены только оценки игроков, проведших в игре больше 2 часов), остальные блоки считаются по отзывам. Самый полезный — по числу 👍. Обновлено ${esc(new Date(VK.generated_at).toLocaleString('ru-RU', { timeZone: 'Europe/Moscow', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }))} МСК · сборщик VK Play v${esc(VK.version || '')}.`;
+}
+
+/* ---------- VK Play: выбранная тема (v1.9) ---------- */
+let vkTopic = null, vkTopicShown = TOPIC_PAGE, vkTopicToken = 0;
+function vkSelectTopic(id) { vkTopic = vkTopic === id ? null : id; vkTopicShown = TOPIC_PAGE; vkRenderTopic(true); }
+function vkRenderTopic(scroll) {
+  const panel = document.getElementById('vkTopicPanel');
+  document.querySelectorAll('#vkCloudPos .w, #vkCloudNeg .w, #vkTagTable tbody tr').forEach(el => el.classList.toggle('sel', !!vkTopic && el.dataset.t === vkTopic));
+  document.querySelectorAll('#vkCloudPos, #vkCloudNeg, #vkTagTable').forEach(el => el.classList.toggle('has-sel', !!vkTopic));
+  if (!vkTopic || !VK) { panel.hidden = true; return; }
+  const token = ++vkTopicToken;
+  const ti = VK.tags.findIndex(t => t.id === vkTopic); if (ti < 0) { panel.hidden = true; return; }
+  const bit = 2 ** ti, has = r => Math.floor(r[VF.tags] / bit) % 2;
+  const rows = vkRows().filter(has).sort((a, b) => b[VF.ts] - a[VF.ts]);
+  panel.hidden = false;
+  document.getElementById('vkTopicTitle').innerHTML = `Тема: ${esc(VK.tags[ti].name)} <span class="sub">отзывы, где она упоминается${vkPeriod ? ' · ' + esc(periodText(vkPeriod)) : ''}</span>`;
+  const cnt = g => rows.filter(r => vkGroup(r[VF.score]) === g).length;
+  document.getElementById('vkTopicCards').innerHTML = mini('Отзывов с темой', fmt(rows.length)) +
+    mini('<span style="color:var(--pos)">6–10</span>', fmt(cnt('pos'))) + mini('<span style="color:var(--neu)">5</span>', fmt(cnt('neu'))) + mini('<span style="color:var(--neg)">1–4</span>', fmt(cnt('neg')));
+  const today = isoOf(Date.now() / 1000);
+  const S = vkPeriod
+    ? vkSeries(rows, vkPeriod.from || (rows.length ? isoOf(rows[rows.length - 1][VF.ts]) : today), vkPeriod.to || today)
+    : vkSeries(VK.rows.filter(has), isoOf(Date.now() / 1000 - 29 * 86400), today);
+  const inChart = S.series.reduce((a, s) => a + s.pos + s.neu + s.neg, 0);
+  document.getElementById('vkTopicChartTitle').textContent = vkPeriod
+    ? `Упоминания по ${S.weekly ? 'неделям' : 'дням'} за период · всего ${fmt(inChart)}`
+    : `Упоминания по дням за последние 30 дней · всего ${fmt(inChart)}`;
+  vkStacked('vkTopicChart', S.series);
+  const withText = rows.filter(r => r[VF.txt]), page = withText.slice(0, vkTopicShown).map(vkCard);
+  document.getElementById('vkTopicListTitle').textContent = `Отзывы с темой — ${fmt(withText.length)}, сначала новые`;
+  const rx = topicRegex(VK.tags, vkTopic), list = document.getElementById('vkTopicList');
+  list.innerHTML = page.length ? page.map(vkReviewHtml).join('') : '<div class="empty-note">Нет отзывов с этой темой</div>';
+  markTopic(list, rx); wireReviews(list);
+  const more = document.getElementById('vkTopicMore'), left = withText.length - page.length;
+  more.hidden = left <= 0; more.textContent = `Показать ещё ${fmt(Math.min(TOPIC_PAGE, left))} (осталось ${fmt(left)})`;
+  page.forEach((c, i) => {
+    if (!c.foreign || !/\p{L}/u.test(c.text || '')) return;
+    translateRu(c.text, 'auto').then(tr => {
+      if (!tr || token !== vkTopicToken) return;
+      c.text_ru = tr;
+      const el = list.querySelectorAll('.review')[i]; if (!el) return;
+      el.outerHTML = vkReviewHtml(c); markTopic(list, rx); wireReviews(list);
+    });
+  });
+  if (scroll) panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+function vkInitTopic() {
+  const pick = e => { const el = e.target.closest('[data-t]'); if (el) vkSelectTopic(el.dataset.t); };
+  ['vkCloudPos', 'vkCloudNeg'].forEach(id => {
+    const c = document.getElementById(id);
+    c.addEventListener('click', pick);
+    c.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(e); } });
+  });
+  document.querySelector('#vkTagTable tbody').addEventListener('click', pick);
+  document.getElementById('vkTopicClose').addEventListener('click', () => { vkSelectTopic(vkTopic); document.getElementById('vkCloudPos').closest('.panel').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+  document.getElementById('vkTopicMore').addEventListener('click', () => { vkTopicShown += TOPIC_PAGE; vkRenderTopic(false); });
 }
 
 initTabs();
