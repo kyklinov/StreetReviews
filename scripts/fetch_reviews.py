@@ -111,7 +111,7 @@ def get_reviews_page(**params):
 
 
 def summary(language="all"):
-        q = get_reviews_page(languages=[language], num_per_page=1)["query_summary"]
+    q = get_reviews_page(languages=[language], num_per_page=1)["query_summary"]
     return {
         "total": q.get("total_reviews", 0),
         "positive": q.get("total_positive", 0),
@@ -156,7 +156,7 @@ def fetch_all_reviews(release_ts):
     for start, end in month_windows(release_ts, now_ts):
         cursor, got, pages = "*", 0, 0
         while True:
-                        j = get_reviews_page(
+            j = get_reviews_page(
                 num_per_page=100,
                 cursor=cursor,
                 date_range_start=start,
@@ -458,7 +458,7 @@ def main():
         languages.append(s)
     languages.sort(key=lambda x: -x["total"])
 
-        release_ts = 1722470400  # 1 августа 2024, UTC
+    release_ts = 1722470400  # 1 августа 2024, UTC
     release_ts -= 31 * 86400  # запас на случай предзаказов / раннего доступа
 
     log("Скачиваю отзывы…")
