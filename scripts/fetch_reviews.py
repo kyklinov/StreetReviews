@@ -95,14 +95,23 @@ def get_json(url, tries=15):
     raise RuntimeError(f"Не удалось получить {url}")
 
 
-def reviews_url(**params):
-    base = {"json": 1, "purchase_type": "all", "language": "all", "num_per_page": 0}
-    base.update(params)
-    return f"https://store.steampowered.com/appreviews/{APP_ID}?" + urllib.parse.urlencode(base)
+def get_reviews_page(**params):
+    query = {
+        "appid": APP_ID,
+        "filter": 1,
+        "languages": ["all"],
+        "purchase_type": 1,
+        "review_type": 0,
+    }
+    query.update(params)
+    encoded = urllib.parse.urlencode({"input_json": json.dumps(query)})
+    url = "https://api.steampowered.com/IUserReviewsService/GetAppReviews/v1/"
+    payload = get_json(f"{url}?{encoded}")
+    return payload.get("response", payload)
 
 
 def summary(language="all"):
-    q = get_json(reviews_url(language=language, filter="all", day_range=9999))["query_summary"]
+        q = get_reviews_page(languages=[language], num_per_page=1)["query_summary"]
     return {
         "total": q.get("total_reviews", 0),
         "positive": q.get("total_positive", 0),
@@ -147,9 +156,12 @@ def fetch_all_reviews(release_ts):
     for start, end in month_windows(release_ts, now_ts):
         cursor, got, pages = "*", 0, 0
         while True:
-            url = reviews_url(filter="recent", num_per_page=100, cursor=cursor,
-                              start_date=start, end_date=end, date_range_type="include")
-            j = get_json(url)
+                        j = get_reviews_page(
+                num_per_page=100,
+                cursor=cursor,
+                date_range_start=start,
+                date_range_end=end,
+            )
             batch = j.get("reviews") or []
             pages += 1
             for r in batch:
@@ -446,9 +458,7 @@ def main():
         languages.append(s)
     languages.sort(key=lambda x: -x["total"])
 
-    # Дата первого отзыва ≈ релиз. Берём из ответа API (app_release_date), иначе — август 2024.
-    probe = get_json(reviews_url(filter="recent", num_per_page=1))
-    release_ts = int((probe.get("reviews") or [{}])[0].get("app_release_date") or 1722470400)
+        release_ts = 1722470400  # 1 августа 2024, UTC
     release_ts -= 31 * 86400  # запас на случай предзаказов / раннего доступа
 
     log("Скачиваю отзывы…")
