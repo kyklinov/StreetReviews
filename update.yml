@@ -1,0 +1,84 @@
+# CarX Street и CarX Drift Racing Online 2 — ежедневное обновление дэшборда отзывов
+# Версия: 1.3 (2026-10-05) — добавлен сбор VK Play; ошибка одного магазина не мешает остальным
+name: Обновление отзывов Steam
+
+on:
+  schedule:
+    - cron: "17 3 * * *"   # каждый день в 03:17 UTC (06:17 МСК)
+  workflow_dispatch:        # ручной запуск из вкладки Actions
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-reviews
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Сбор отзывов Steam
+        id: steam
+        continue-on-error: true
+        run: python scripts/fetch_reviews.py
+
+      - name: Сбор оценок и отзывов с консолей
+        id: consoles
+        continue-on-error: true
+        run: python scripts/fetch_consoles.py
+
+      - name: Сбор отзывов VK Play
+        id: vkplay
+        continue-on-error: true
+        run: python scripts/fetch_vkplay.py
+
+      - name: Сбор отзывов Steam — CarX Drift Racing Online 2
+        id: steam_dro2
+        continue-on-error: true
+        env:
+          APP_ID: "1826420"
+        run: python scripts/fetch_reviews.py
+
+      - name: Коммит данных
+        if: always()
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898333+github-actions[bot]@users.noreply.github.com"
+          git add -A docs/data.json docs/reviews docs/consoles docs/vkplay
+          if [ "${{ steps.steam_dro2.outcome }}" = "success" ]; then
+            git add -A docs/projects/drift-racing-online-2
+          fi
+          if git diff --cached --quiet; then
+            echo "Изменений нет"
+          else
+            git commit -m "data: обновление отзывов $(date -u +'%Y-%m-%d')"
+            git push
+          fi
+
+      - name: Проверка
+        if: always()
+        run: |
+          failed=0
+          if [ "${{ steps.steam.outcome }}" != "success" ]; then
+            echo "::error::Сбор отзывов Steam завершился с ошибкой — на сайте остались прошлые данные Steam. Откройте шаг «Сбор отзывов Steam»."
+            failed=1
+          fi
+          if [ "${{ steps.steam_dro2.outcome }}" != "success" ]; then
+            echo "::error::Сбор отзывов Steam для CarX Drift Racing Online 2 завершился с ошибкой."
+            failed=1
+          fi
+          if [ "${{ steps.consoles.outcome }}" != "success" ]; then
+            echo "::warning::Сбор консолей завершился с ошибкой — подробности в шаге «Сбор оценок и отзывов с консолей»."
+          fi
+          if [ "${{ steps.vkplay.outcome }}" != "success" ]; then
+            echo "::warning::Сбор VK Play завершился с ошибкой — подробности в шаге «Сбор отзывов VK Play»."
+          fi
+          exit "$failed"
