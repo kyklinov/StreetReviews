@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300..700&display=swap" rel="stylesheet">
-<title>Отзывы CarX Street</title>
+<title>Отзывы игроков CarX</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <style>
   :root {
@@ -156,8 +156,25 @@
     .game-row .bar-track, .game-row .gcounts, .games-head .h-bar, .games-head .h-counts { display: none; }
     .game-ex { padding-left: 8px; }
   }
+  .projects-wrap { max-width: 1180px; margin: 0 auto; padding: 20px 32px 0; }
+  .projects { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  .project-tab { padding: 9px 16px; border: 1px solid var(--border); border-radius: 8px;
+    color: var(--text-muted); text-decoration: none; font-size: 14px; font-weight: 600; }
+  .project-tab:hover { color: var(--text); border-color: var(--accent); }
+  .project-tab[aria-current="page"] { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
+  .nav-label { margin-right: 8px; font-size: 14px; color: var(--text-muted); }
+  .tabs .nav-label { align-self: center; }
+  .drift-racing-online-2 .hero {
+    background-image: url("assets/drift-racing-online-2.webp");
+  }
+  .hero-project-name { max-width: 480px; font-size: clamp(26px, 4vw, 52px); line-height: 1.02; font-weight: 700; }
+  @media (max-width: 640px) {
+    .projects-wrap { padding: 12px 16px 0; }
+    .project-tab { padding: 8px 10px; }
+    .projects .nav-label { flex-basis: 100%; }
+  }
   .tabs-wrap { max-width: 1180px; margin: 0 auto; padding: 0 32px; border-bottom: 1px solid var(--border); }
-  .tabs { display: flex; gap: 4px; }
+  .tabs { display: flex; flex-wrap: wrap; gap: 4px; }
   .tabs button { border: 0; background: none; font: inherit; font-size: 14px; font-weight: 600; color: var(--text-muted); cursor: pointer;
     padding: 12px 16px 11px; border-bottom: 3px solid transparent; margin-bottom: -1px; }
   .tabs button:hover { color: var(--text); }
@@ -190,7 +207,7 @@
   .meta-note a { color: var(--accent); }
   @media (max-width: 900px) { .cards.five { grid-template-columns: repeat(2, 1fr); } }
   @media (max-width: 560px) {
-    .tabs-wrap { padding: 0 16px; } .tabs button { padding: 10px 10px 9px; font-size: 13px; } .tabs .tab-sub { display: none; }
+    .tabs-wrap { padding: 0 16px; } .tabs .nav-label { flex-basis: 100%; margin-top: 9px; } .tabs button { padding: 10px 10px 9px; font-size: 13px; } .tabs .tab-sub { display: none; }
     .mk-head, .mk-row { grid-template-columns: minmax(0, 1fr) 46px 52px 44px; } .mk-row .bar-track, .mk-head .h-bar { display: none; }
   }
   .sub-h { font-size: 12px; font-weight: 600; color: var(--text-muted); margin: 0 0 6px; }
@@ -300,20 +317,27 @@
 </head>
 <body>
 
-<div class="hero-wrap"><header class="hero">
-  <img id="hdrImg" alt="" hidden>
-  <div class="hero-in">
-    <h1><img class="logo" src="assets/logo.png" alt="CarX Street" width="392" height="100"><span class="h1-text">Отзывы игроков</span></h1>
-    <p class="subtitle">Обновляется автоматически каждый день · <span id="updated">загрузка…</span><span class="links"><a id="storeLink" href="https://store.steampowered.com/app/1114150/" target="_blank" rel="noopener">Steam Store ↗</a> · <a href="https://store.playstation.com/en-us/concept/10001917" target="_blank" rel="noopener">PlayStation Store (US) ↗</a> · <a href="https://www.xbox.com/en-US/games/store/carx-street/9nn082lmvv2c" target="_blank" rel="noopener">Xbox Store (US) ↗</a> · <a href="https://vkplay.ru/play/game/carx-street-34754/" target="_blank" rel="noopener">VK Play ↗</a></p>
-  </div>
-</header></div>
+<div class="projects-wrap"><nav class="projects" aria-label="Проекты">
+  <span class="nav-label" aria-hidden="true">Проекты</span>
+  <a class="project-tab" id="streetProject" href="./" aria-current="page">CarX Street</a>
+  <a class="project-tab" id="driftProject" href="?project=drift-racing-online-2">CarX Drift Racing Online 2</a>
+</nav></div>
 
 <div class="tabs-wrap"><nav class="tabs" role="tablist" aria-label="Платформа">
+  <span class="nav-label" aria-hidden="true">Платформа</span>
   <button type="button" role="tab" data-tab="steam" class="on" aria-selected="true">Steam</button>
   <button type="button" role="tab" data-tab="ps" aria-selected="false" tabindex="-1">PlayStation<span class="tab-sub">PS5</span></button>
   <button type="button" role="tab" data-tab="xbox" aria-selected="false" tabindex="-1">Xbox<span class="tab-sub">Series X|S</span></button>
   <button type="button" role="tab" data-tab="vk" aria-selected="false" tabindex="-1">VK Play<span class="tab-sub">ПК</span></button>
 </nav></div>
+
+<div class="hero-wrap"><header class="hero">
+  <img id="hdrImg" alt="" hidden>
+  <div class="hero-in">
+    <h1><img class="logo" src="assets/logo.png" alt="CarX Street" width="392" height="100"><span class="hero-project-name" hidden>CarX Drift Racing Online 2</span><span class="h1-text">Отзывы игроков</span></h1>
+    <p class="subtitle">Обновляется автоматически каждый день · <span id="updated">загрузка…</span><span class="links"><a id="storeLink" href="https://store.steampowered.com/app/1114150/" target="_blank" rel="noopener">Steam Store ↗</a> · <a href="https://store.playstation.com/en-us/concept/10001917" target="_blank" rel="noopener">PlayStation Store (US) ↗</a> · <a href="https://www.xbox.com/en-US/games/store/carx-street/9nn082lmvv2c" target="_blank" rel="noopener">Xbox Store (US) ↗</a> · <a href="https://vkplay.ru/play/game/carx-street-34754/" target="_blank" rel="noopener">VK Play ↗</a></p>
+  </div>
+</header></div>
 
 <main id="app">
   <div class="filter-bar" id="filterBar" hidden></div>
@@ -633,9 +657,26 @@ const dateTime = ts => new Date(ts * 1000).toLocaleString('ru-RU', { timeZone: '
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 
+const isDrift2 = new URLSearchParams(location.search).get('project') === 'drift-racing-online-2';
+const projectData = isDrift2 ? 'projects/drift-racing-online-2/' : '';
+const defaultFirstReview = isDrift2 ? '2026-05-07' : '2024-08-29';
+if (isDrift2) {
+  document.documentElement.classList.add('drift-racing-online-2');
+  document.title = 'Отзывы CarX Drift Racing Online 2';
+  document.getElementById('streetProject').removeAttribute('aria-current');
+  document.getElementById('driftProject').setAttribute('aria-current', 'page');
+  document.querySelector('.hero .logo').hidden = true;
+  document.querySelector('.hero-project-name').hidden = false;
+  const links = document.querySelector('.hero .links');
+  const steamLink = document.getElementById('storeLink');
+  steamLink.href = 'https://store.steampowered.com/app/1826420/';
+  links.replaceChildren(steamLink);
+  document.querySelector('.art-foot').hidden = true;
+}
+
 async function loadData() {
   if (window.__DATA__) return window.__DATA__;           // встроенные данные (превью)
-  const r = await fetch('data.json?v=' + Date.now());
+  const r = await fetch(projectData + 'data.json?v=' + Date.now());
   if (!r.ok) throw new Error('data.json: HTTP ' + r.status);
   return r.json();
 }
@@ -1098,7 +1139,7 @@ function renderMeta(d) {
   document.getElementById('updated').textContent = 'данные на ' + g.toLocaleString('ru-RU', { timeZone: 'Europe/Moscow', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }) + ' МСК';
   if (d.app?.url) document.getElementById('storeLink').href = d.app.url;
   document.getElementById('footer').innerHTML = `
-    <p>Источник: открытое API отзывов Steam (<code>appreviews/${d.app?.id}</code>). Учитываются все отзывы — купившие в Steam, активировавшие ключ и получившие игру бесплатно, поэтому общее число может немного отличаться от цифры на странице магазина (там по умолчанию показаны только покупки в Steam).
+    <p>Источник: открытое API отзывов Steam (<code>IUserReviewsService/GetAppReviews</code>). Учитываются все отзывы — купившие в Steam, активировавшие ключ и получившие игру бесплатно, поэтому общее число может немного отличаться от цифры на странице магазина (там по умолчанию показаны только покупки в Steam).
     Рейтинг по языкам — по сводке Steam для каждого языка, на который локализована страница; остальные языки собраны в строку «Прочие языки».
     При выборе языка все блоки пересчитываются только по отзывам, написанным на этом языке (это язык отзыва, а не страна игрока).
     При выборе периода все цифры считаются по загруженным отзывам за эти даты (по московскому времени), поэтому могут немного расходиться со сводкой Steam.
@@ -1145,13 +1186,13 @@ function scoreDesc(p, n) {
 let IDX = null; const TXT = new Map();
 async function loadIndex() {
   if (IDX) return IDX;
-  const r = await fetch('reviews/index.json?v=' + (DATA.generated_at || ''));
+  const r = await fetch(projectData + 'reviews/index.json?v=' + (DATA.generated_at || ''));
   if (!r.ok) throw new Error('reviews/index.json: HTTP ' + r.status);
   return IDX = await r.json();
 }
 async function loadTexts(months) {
   await Promise.all([...new Set(months)].filter(m => !TXT.has(m)).map(async m => {
-    try { const r = await fetch(`reviews/text-${m}.json?v=` + (DATA.generated_at || '')); TXT.set(m, r.ok ? await r.json() : {}); }
+    try { const r = await fetch(projectData + `reviews/text-${m}.json?v=` + (DATA.generated_at || '')); TXT.set(m, r.ok ? await r.json() : {}); }
     catch (e) { TXT.set(m, {}); }
   }));
 }
@@ -1343,7 +1384,7 @@ function submitPeriod() {
   fe.classList.toggle('bad', !!a.error); te.classList.toggle('bad', !!b.error);
   if (a.error || b.error) return setPeriodMsg(a.error || b.error, 'err');
   if (a.empty && b.empty) return setPeriodMsg('Укажите хотя бы одну дату: «с» или «по»', 'err');
-  const today = isoOf(Date.now() / 1000), first = DATA.first_review_date || '2024-08-29';
+  const today = isoOf(Date.now() / 1000), first = DATA.first_review_date || defaultFirstReview;
   if (a.iso && b.iso && a.iso > b.iso) { fe.classList.add('bad'); te.classList.add('bad'); return setPeriodMsg('Дата «с» позже даты «по»', 'err'); }
   if (a.iso && a.iso > today) { fe.classList.add('bad'); return setPeriodMsg('Дата «с» ещё не наступила', 'err'); }
   if (b.iso && b.iso < first) { te.classList.add('bad'); return setPeriodMsg(`Отзывы есть только с ${ruDate(first)}`, 'err'); }
@@ -1361,7 +1402,7 @@ loadData().then(d => {
   DATA = d;
   renderMeta(d);
   document.getElementById('periodRange').textContent =
-    `Доступны даты с ${ruDate(d.first_review_date || '2024-08-29')} по ${ruDate(isoOf(Date.now() / 1000))}. Если указать только одну дату, вторая граница — начало или конец всех данных.`;
+    `Доступны даты с ${ruDate(d.first_review_date || defaultFirstReview)} по ${ruDate(isoOf(Date.now() / 1000))}. Если указать только одну дату, вторая граница — начало или конец всех данных.`;
   maskDate(document.getElementById('dateFrom')); maskDate(document.getElementById('dateTo'));
   document.getElementById('periodApply').addEventListener('click', submitPeriod);
   document.getElementById('periodReset').addEventListener('click', resetPeriod);
@@ -1381,11 +1422,16 @@ loadData().then(d => {
     renderTags(lastSlice || sliceOf(currentLang));
   }));
 }).catch(e => {
+  document.getElementById('updated').textContent = 'сводка недоступна';
+  if (isDrift2 && e.message === 'data.json: HTTP 404') {
+    document.getElementById('app').innerHTML = '<div class="err">Статистика Steam появится после первого успешного сбора отзывов.</div>';
+    return;
+  }
   document.getElementById('app').innerHTML = `<div class="err">Не удалось загрузить данные: ${esc(e.message)}.<br>Если вы открыли файл локально, запустите <code>python -m http.server</code> в папке <code>docs</code> или откройте опубликованную страницу GitHub Pages.</div>`;
 });
 
 /* ================== Вкладки: Steam / PlayStation / Xbox / VK Play (v1.8) ================== */
-const TABS = ['steam', 'ps', 'xbox', 'vk'];
+const TABS = isDrift2 ? ['steam'] : ['steam', 'ps', 'xbox', 'vk'];
 let currentTab = 'steam', steamHash = '';
 function tabFromHash() {
   const h = (location.hash || '').replace('#', '');
@@ -1404,6 +1450,7 @@ function showTab(tab, fromHash) {
   document.getElementById('xbApp').hidden = tab !== 'xbox';
   document.getElementById('vkApp').hidden = tab !== 'vk';
   document.querySelectorAll('.tabs button').forEach(b => {
+    b.hidden = !TABS.includes(b.dataset.tab);
     const on = b.dataset.tab === tab;
     b.classList.toggle('on', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); b.tabIndex = on ? 0 : -1;
   });
