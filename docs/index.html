@@ -156,22 +156,37 @@
     .game-row .bar-track, .game-row .gcounts, .games-head .h-bar, .games-head .h-counts { display: none; }
     .game-ex { padding-left: 8px; }
   }
-  .projects-wrap { max-width: 1180px; margin: 0 auto; padding: 20px 32px 0; }
-  .projects { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-  .project-tab { padding: 9px 16px; border: 1px solid var(--border); border-radius: 8px;
-    color: var(--text-muted); text-decoration: none; font-size: 14px; font-weight: 600; }
-  .project-tab:hover { color: var(--text); border-color: var(--accent); }
-  .project-tab[aria-current="page"] { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
+  .project-navigation { max-width: 1180px; margin: 0 auto; padding: 24px 32px 0; }
+  .project-navigation a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  .project-picker { padding-top: 40px; padding-bottom: 36px; }
+  .project-picker h1 { font-size: clamp(24px, 4vw, 38px); margin: 0 0 20px; }
+  .category-list, .project-list, .platform-list { list-style: none; padding: 0; margin: 0; }
+  .category-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+  .category-link { display: block; min-height: 88px; padding: 24px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 12px; color: var(--text);
+    text-decoration: none; font-size: 20px; font-weight: 600; }
+  .category-link:hover { border-color: var(--accent); background: var(--accent-soft); }
+  .project-list { padding: 0 20px; border: 1px solid var(--border);
+    border-radius: 12px; background: var(--surface); }
+  .project-list > li { padding: 16px 0; }
+  .project-list > li + li { border-top: 1px solid var(--border); }
+  .project-list h2 { font-size: 18px; margin: 0 0 9px; font-weight: 600; }
+  .platform-list { display: flex; flex-wrap: wrap; gap: 8px; }
+  .platform-link { display: block; padding: 8px 13px; border: 1px solid var(--border); border-radius: 8px;
+    background: var(--bg); color: var(--text); text-decoration: none; font-size: 15px; font-weight: 600; }
+  .platform-link:hover, .platform-link[aria-current="page"] {
+    border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+  .project-back { display: inline-block; color: var(--accent); font-size: 14px; margin-bottom: 12px; }
+  .project-status { margin-top: 20px; }
+  .project-status p { margin: 0 0 10px; }
+  .project-status a { color: var(--accent); }
   .nav-label { margin-right: 8px; font-size: 14px; color: var(--text-muted); }
   .tabs .nav-label { align-self: center; }
-  .drift-racing-online-2 .hero {
-    background-image: url("assets/drift-racing-online-2.webp");
-  }
+  .drift-racing-online-2 .hero { background-image: url("assets/drift-racing-online-2.webp"); }
   .hero-project-name { max-width: 480px; font-size: clamp(26px, 4vw, 52px); line-height: 1.02; font-weight: 700; }
   @media (max-width: 640px) {
-    .projects-wrap { padding: 12px 16px 0; }
-    .project-tab { padding: 8px 10px; }
-    .projects .nav-label { flex-basis: 100%; }
+    .project-navigation { padding-left: 16px; padding-right: 16px; }
+    .category-list { grid-template-columns: 1fr; }
   }
   .tabs-wrap { max-width: 1180px; margin: 0 auto; padding: 0 32px; border-bottom: 1px solid var(--border); }
   .tabs { display: flex; flex-wrap: wrap; gap: 4px; }
@@ -317,11 +332,11 @@
 </head>
 <body>
 
-<div class="projects-wrap"><nav class="projects" aria-label="Проекты">
-  <span class="nav-label" aria-hidden="true">Проекты</span>
-  <a class="project-tab" id="streetProject" href="./" aria-current="page">CarX Street</a>
-  <a class="project-tab" id="driftProject" href="?project=drift-racing-online-2">CarX Drift Racing Online 2</a>
-</nav></div>
+<main class="project-navigation project-picker" id="projectPicker" hidden></main>
+<div id="reviewDashboard" hidden>
+<nav class="project-navigation" aria-label="Проекты">
+  <a class="project-back" href="?category=pc">К проектам PC</a>
+</nav>
 
 <div class="tabs-wrap"><nav class="tabs" role="tablist" aria-label="Платформа">
   <span class="nav-label" aria-hidden="true">Платформа</span>
@@ -645,6 +660,8 @@
   <p>Дэшборд отзывов игроков · Steam · PlayStation · Xbox · VK Play</p>
 </div></div></div>
 
+</div>
+
 <script>
 /* CarX Street · дэшборд отзывов · версия 1.9 */
 if (window.Chart && Chart.defaults && Chart.defaults.font) Chart.defaults.font.family = '"Oswald", "Arial Narrow", sans-serif';
@@ -657,14 +674,80 @@ const dateTime = ts => new Date(ts * 1000).toLocaleString('ru-RU', { timeZone: '
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 
-const isDrift2 = new URLSearchParams(location.search).get('project') === 'drift-racing-online-2';
+const CATEGORIES = { pc: 'PC', mobile: 'Мобильные проекты' };
+const PLATFORMS = {
+  steam: 'Steam', ps: 'PlayStation', xbox: 'Xbox', vk: 'VK Play', epic: 'Epic Games Store',
+  switch: 'Nintendo Switch', ios: 'iOS', android: 'Android', huawei: 'Huawei AppGallery', rustore: 'RuStore',
+};
+const PROJECTS = [
+  { id: 'street', name: 'CarX Street', category: 'pc', platforms: ['steam', 'ps', 'xbox', 'vk'], connected: true },
+  { id: 'drift-racing-online-2', name: 'CarX Drift Racing Online 2', category: 'pc', platforms: ['steam'], connected: true },
+  { id: 'rally-pc', name: 'CarX Rally', category: 'pc', platforms: ['steam'],
+    stores: { steam: 'https://store.steampowered.com/app/3883610/CarX_Rally/' } },
+  { id: 'drift-racing-online', name: 'CarX Drift Racing Online', category: 'pc', platforms: ['steam', 'epic', 'xbox', 'ps', 'vk', 'switch'],
+    stores: { steam: 'https://store.steampowered.com/app/635260/CarX_Drift_Racing_Online/',
+      epic: 'https://store.epicgames.com/p/carx-drift-racing-online-540527' } },
+  { id: 'street-mobile', name: 'CarX Street Mobile', category: 'mobile', platforms: ['ios', 'android'] },
+  { id: 'drift-racing-3', name: 'CarX Drift Racing 3', category: 'mobile', platforms: ['ios', 'android'] },
+  { id: 'drift-racing-2', name: 'CarX Drift Racing 2', category: 'mobile', platforms: ['ios', 'android', 'huawei', 'rustore'] },
+  { id: 'rally-mobile', name: 'CarX Rally', category: 'mobile', platforms: ['ios', 'android'] },
+];
+const params = new URLSearchParams(location.search);
+const category = Object.hasOwn(CATEGORIES, params.get('category')) ? params.get('category') : null;
+const projectId = params.get('project') || (!category && location.hash ? 'street' : null);
+const project = PROJECTS.find(item => item.id === projectId);
+const isDrift2 = project?.id === 'drift-racing-online-2';
 const projectData = isDrift2 ? 'projects/drift-racing-online-2/' : '';
 const defaultFirstReview = isDrift2 ? '2026-05-07' : '2024-08-29';
+
+function platformUrl(item, platform) {
+  if (item.connected) return `?project=${item.id}${platform === 'steam' ? '' : '#' + platform}`;
+  return `?project=${item.id}&platform=${platform}`;
+}
+
+function platformLinks(item, selected) {
+  return `<ul class="platform-list">${item.platforms.map(platform => `<li><a class="platform-link"
+    href="${platformUrl(item, platform)}"${platform === selected ? ' aria-current="page"' : ''}
+    aria-label="${PLATFORMS[platform]} · ${item.name}">${PLATFORMS[platform]}</a></li>`).join('')}</ul>`;
+}
+
+function renderProjectNavigation() {
+  const picker = document.getElementById('projectPicker');
+  if (project?.connected) {
+    document.getElementById('reviewDashboard').hidden = false;
+    return;
+  }
+  picker.hidden = false;
+  if (project) {
+    const requested = params.get('platform');
+    const platform = project.platforms.includes(requested) ? requested : project.platforms[0];
+    const store = project.stores?.[platform];
+    document.title = `${project.name} · ${PLATFORMS[platform]} · Отзывы CarX`;
+    picker.innerHTML = `<a class="project-back" href="?category=${project.category}">К проектам · ${CATEGORIES[project.category]}</a>
+      <h1>${project.name}</h1>
+      <nav aria-label="Платформы ${project.name}">${platformLinks(project, platform)}</nav>
+      <section class="panel project-status" aria-label="${PLATFORMS[platform]}">
+        <h2>${PLATFORMS[platform]}</h2>
+        <p>Сбор отзывов для этой платформы пока не подключён.</p>
+        ${store ? `<a href="${store}" target="_blank" rel="noopener">Открыть страницу в магазине</a>` : ''}
+      </section>`;
+  } else if (category) {
+    document.title = `${CATEGORIES[category]} · Отзывы CarX`;
+    picker.innerHTML = `<a class="project-back" href="./">К выбору категории</a><h1>${CATEGORIES[category]}</h1>
+      <ul class="project-list">${PROJECTS.filter(item => item.category === category).map(item =>
+        `<li><h2>${item.name}</h2>${platformLinks(item)}</li>`).join('')}</ul>`;
+  } else {
+    picker.innerHTML = `<h1>Выберите категорию проектов</h1><ul class="category-list">
+      ${Object.entries(CATEGORIES).map(([id, name]) =>
+        `<li><a class="category-link" href="?category=${id}">${name}</a></li>`).join('')}
+      </ul>`;
+  }
+}
+
+renderProjectNavigation();
 if (isDrift2) {
   document.documentElement.classList.add('drift-racing-online-2');
   document.title = 'Отзывы CarX Drift Racing Online 2';
-  document.getElementById('streetProject').removeAttribute('aria-current');
-  document.getElementById('driftProject').setAttribute('aria-current', 'page');
   document.querySelector('.hero .logo').hidden = true;
   document.querySelector('.hero-project-name').hidden = false;
   const links = document.querySelector('.hero .links');
@@ -1350,9 +1433,12 @@ function applyFilters(lang, period, fromHash) {
   renderAll();
 }
 function parseHash() {
-  const h = decodeURIComponent((location.hash || '').replace('#', ''));
+  if (tabFromHash() !== 'steam') return [null, null];
+  const h = location.hash.slice(1);
+  let decoded;
+  try { decoded = decodeURIComponent(h); } catch { return [null, null]; }
   if (!h) return [null, null];
-  const [lang, from, to] = h.split('~');
+  const [lang, from, to] = decoded.split('~');
   const ok = s => /^\d{4}-\d{2}-\d{2}$/.test(s || '') ? s : null;
   const p = (from !== undefined) ? { from: ok(from), to: ok(to) } : null;
   return [lang && lang !== 'all' ? lang : null, p && (p.from || p.to) ? p : null];
@@ -1398,7 +1484,7 @@ function resetPeriod() {
   applyFilters(currentLang, null);
 }
 
-loadData().then(d => {
+if (project?.connected) loadData().then(d => {
   DATA = d;
   renderMeta(d);
   document.getElementById('periodRange').textContent =
@@ -1431,7 +1517,7 @@ loadData().then(d => {
 });
 
 /* ================== Вкладки: Steam / PlayStation / Xbox / VK Play (v1.8) ================== */
-const TABS = isDrift2 ? ['steam'] : ['steam', 'ps', 'xbox', 'vk'];
+const TABS = project?.connected ? project.platforms : [];
 let currentTab = 'steam', steamHash = '';
 function tabFromHash() {
   const h = (location.hash || '').replace('#', '');
@@ -1442,7 +1528,7 @@ function tabFromHash() {
 }
 function showTab(tab, fromHash) {
   if (!TABS.includes(tab)) tab = 'steam';
-  if (currentTab === 'steam' && tab !== 'steam') steamHash = location.hash;
+  if (currentTab === 'steam' && tab !== 'steam' && tabFromHash() === 'steam') steamHash = location.hash;
   currentTab = tab;
   document.getElementById('app').hidden = tab !== 'steam';
   document.getElementById('footer').hidden = tab !== 'steam';
@@ -2153,7 +2239,7 @@ function vkInitTopic() {
   document.getElementById('vkTopicMore').addEventListener('click', () => { vkTopicShown += TOPIC_PAGE; vkRenderTopic(false); });
 }
 
-initTabs();
+if (project?.connected) initTabs();
 </script>
 </body>
 </html>
