@@ -26,7 +26,14 @@ SCRIPT_VERSION = "1.7"
 APP_ID = int(os.environ.get("APP_ID", "1114150"))
 TZ = timezone(timedelta(hours=3))  # Москва — границы дней считаем по МСК
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-OUT_PATH = os.path.join(ROOT, "docs", "data.json")
+DRIFT_2_APP_ID = 1826420
+DRIFT_2 = APP_ID == DRIFT_2_APP_ID
+PROJECT_NAME = "CarX Drift Racing Online 2" if DRIFT_2 else "CarX Street"
+RELEASE_TS = 1778112000 if DRIFT_2 else 1722470400  # 7 мая 2026 / 1 августа 2024, UTC
+OUT_DIR = os.path.join(ROOT, "docs")
+if DRIFT_2:
+    OUT_DIR = os.path.join(OUT_DIR, "projects", "drift-racing-online-2")
+OUT_PATH = os.path.join(OUT_DIR, "data.json")
 TAGS_PATH = os.path.join(ROOT, "scripts", "tags.json")
 GAMES_PATH = os.path.join(ROOT, "scripts", "games.json")
 REQUEST_PAUSE = float(os.environ.get("REQUEST_PAUSE", "1.5"))  # пауза между запросами, сек
@@ -132,7 +139,7 @@ def app_details():
         if name in STEAM_LANG_CODES:
             codes.append(STEAM_LANG_CODES[name])
     return {
-        "name": data.get("name", "CarX Street"),
+        "name": data.get("name", PROJECT_NAME),
         "header_image": data.get("header_image", ""),
         "release_date": (data.get("release_date") or {}).get("date", ""),
         "languages": codes or FALLBACK_LANGS,
@@ -458,7 +465,7 @@ def main():
         languages.append(s)
     languages.sort(key=lambda x: -x["total"])
 
-    release_ts = 1722470400  # 1 августа 2024, UTC
+    release_ts = RELEASE_TS
     release_ts -= 31 * 86400  # запас на случай предзаказов / раннего доступа
 
     log("Скачиваю отзывы…")
