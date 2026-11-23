@@ -71,7 +71,17 @@ def get_json(url, tries=15):
         try:
             req = urllib.request.Request(url, headers={"User-Agent": UA})
             with urllib.request.urlopen(req, timeout=40) as r:
-                data = json.loads(r.read().decode("utf-8"))
+                body = r.read()
+                try:
+                    data = json.loads(body.decode("utf-8"))
+                except (UnicodeDecodeError, json.JSONDecodeError):
+                    preview = body[:200].decode("utf-8", errors="replace")
+                    log(
+                        f"Ответ не разобран как JSON: HTTP {r.status}, "
+                        f"Content-Type={r.headers.get('Content-Type', 'не указан')}, "
+                        f"размер={len(body)} байт, начало={preview!r}"
+                    )
+                    raise
             time.sleep(REQUEST_PAUSE)
             return data
         except urllib.error.HTTPError as e:
