@@ -67,7 +67,18 @@ jobs:
         timeout-minutes: 120
         env:
           APP_ID: "635260"
-        run: python scripts/fetch_reviews.py
+        run: |
+          expected=docs/projects/drift-racing-online/data.json
+          actual=$(PYTHONPATH=scripts python -c 'import os; from fetch_reviews import OUT_PATH; print(os.path.relpath(OUT_PATH))')
+          if [ "$actual" != "$expected" ]; then
+            echo "::error::Сборщик Steam пишет в $actual вместо $expected. Обновите scripts/fetch_reviews.py."
+            exit 1
+          fi
+          python scripts/fetch_reviews.py
+          if [ ! -s "$expected" ] || [ ! -s "docs/projects/drift-racing-online/reviews/index.json" ]; then
+            echo "::error::Сборщик Steam не создал данные CarX Drift Racing Online."
+            exit 1
+          fi
 
       - name: Коммит данных
         id: commit_data
