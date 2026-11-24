@@ -695,10 +695,17 @@ const PROJECTS = [
   { id: 'street', name: 'CarX Street', category: 'pc', platforms: ['steam', 'ps', 'xbox', 'vk'], connected: true },
   { id: 'drift-racing-online-2', name: 'CarX Drift Racing Online 2', category: 'pc', platforms: ['steam'], connected: true },
   { id: 'rally-pc', name: 'CarX Rally', category: 'pc', platforms: ['steam'],
-    stores: { steam: 'https://store.steampowered.com/app/3883610/CarX_Rally/' } },
+    stores: { steam: 'https://store.steampowered.com/app/3883610/CarX_Rally/' },
+    reviewStatus: { steam: 'Отзывов в Steam пока нет.' } },
   { id: 'drift-racing-online', name: 'CarX Drift Racing Online', category: 'pc', platforms: ['steam', 'epic', 'xbox', 'ps', 'vk', 'switch'],
-    stores: { steam: 'https://store.steampowered.com/app/635260/CarX_Drift_Racing_Online/',
-      epic: 'https://store.epicgames.com/p/carx-drift-racing-online-540527' } },
+    stores: {
+      steam: 'https://store.steampowered.com/app/635260/CarX_Drift_Racing_Online/',
+      epic: 'https://store.epicgames.com/p/carx-drift-racing-online-540527',
+      ps: 'https://store.playstation.com/ru-ua/product/EP4910-CUSA15633_00-0000000000000000',
+      xbox: 'https://www.xbox.com/ru-RU/games/store/carx-drift-racing-online/9n6ftc4qjmwn',
+      vk: 'https://vkplay.ru/play/game/carx-drift-racing-online-11269/',
+      switch: 'https://www.nintendo.com/us/store/products/carx-drift-racing-online-switch/',
+    } },
   { id: 'street-mobile', name: 'CarX Street Mobile', category: 'mobile', platforms: ['ios', 'android'] },
   { id: 'drift-racing-3', name: 'CarX Drift Racing 3', category: 'mobile', platforms: ['ios', 'android'] },
   { id: 'drift-racing-2', name: 'CarX Drift Racing 2', category: 'mobile', platforms: ['ios', 'android', 'huawei', 'rustore'] },
@@ -742,13 +749,14 @@ function renderProjectNavigation() {
     const requested = params.get('platform');
     const platform = project.platforms.includes(requested) ? requested : project.platforms[0];
     const store = project.stores?.[platform];
+    const reviewStatus = project.reviewStatus?.[platform] ?? 'Сбор отзывов для этой платформы пока не подключён.';
     document.title = `${project.name} · ${PLATFORMS[platform]} · Отзывы CarX`;
     picker.innerHTML = `<a class="project-back" href="?category=${project.category}">К проектам · ${CATEGORIES[project.category]}</a>
       <h1>${project.name}</h1>
       <nav aria-label="Платформы ${project.name}">${platformLinks(project, platform)}</nav>
       <section class="panel project-status" aria-label="${PLATFORMS[platform]}">
         <h2>${PLATFORMS[platform]}</h2>
-        <p>Сбор отзывов для этой платформы пока не подключён.</p>
+        <p>${reviewStatus}</p>
         ${store ? `<a href="${store}" target="_blank" rel="noopener">Открыть страницу в магазине</a>` : ''}
       </section>`;
   } else if (category) {
