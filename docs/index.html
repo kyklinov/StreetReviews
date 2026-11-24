@@ -185,6 +185,10 @@
   .project-status a { color: var(--accent); }
   .nav-label { margin-right: 8px; font-size: 14px; color: var(--text-muted); }
   .tabs .nav-label { align-self: center; }
+  .drift-racing-online .hero {
+    background: #0E0E12 center 52% / cover no-repeat;
+    background-image: linear-gradient(90deg, rgba(8,8,12,.88), rgba(8,8,12,.52)), url("assets/drift-racing-online.webp");
+  }
   .drift-racing-online-2 .hero { background-image: url("assets/drift-racing-online-2.webp"); }
   .hero-project-name { max-width: 480px; font-size: clamp(26px, 4vw, 52px); line-height: 1.02; font-weight: 700; }
   @media (max-width: 640px) {
@@ -296,6 +300,7 @@
   footer { max-width: 1180px; margin: 0 auto; padding: 0 32px 40px; color: var(--text-muted); font-size: 12px; line-height: 1.6; }
   footer code { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 0 4px; }
   .empty-note { color: var(--text-muted); font-size: 13px; padding: 20px 0; }
+  .data-unavailable > :not(.data-error) { display: none; }
   .err { background: var(--neg-soft); border: 1px solid var(--neg); border-radius: 10px; padding: 16px; }
 
   @media (max-width: 900px) {
@@ -352,7 +357,7 @@
 <div class="hero-wrap"><header class="hero">
   <img id="hdrImg" alt="" hidden>
   <div class="hero-in">
-    <h1><img class="logo" src="assets/logo.png" alt="CarX Street" width="392" height="100"><span class="hero-project-name" hidden>CarX Drift Racing Online 2</span><span class="h1-text">Отзывы игроков</span></h1>
+    <h1><img class="logo" src="assets/logo.png" alt="CarX Street" width="392" height="100"><span class="hero-project-name" hidden></span><span class="h1-text">Отзывы игроков</span></h1>
     <p class="subtitle">Обновляется автоматически каждый день · <span id="updated">загрузка…</span><span class="links"><a id="storeLink" href="https://store.steampowered.com/app/1114150/" target="_blank" rel="noopener">Steam Store ↗</a> · <a href="https://store.playstation.com/en-us/concept/10001917" target="_blank" rel="noopener">PlayStation Store (US) ↗</a> · <a href="https://www.xbox.com/en-US/games/store/carx-street/9nn082lmvv2c" target="_blank" rel="noopener">Xbox Store (US) ↗</a> · <a href="https://vkplay.ru/play/game/carx-street-34754/" target="_blank" rel="noopener">VK Play ↗</a></p>
   </div>
 </header></div>
@@ -692,17 +697,20 @@ const PLATFORMS = {
   switch: 'Nintendo Switch', ios: 'iOS', android: 'Android', huawei: 'Huawei AppGallery', rustore: 'RuStore',
 };
 const PROJECTS = [
-  { id: 'street', name: 'CarX Street', category: 'pc', platforms: ['steam', 'ps', 'xbox', 'vk'], connected: true },
-  { id: 'drift-racing-online-2', name: 'CarX Drift Racing Online 2', category: 'pc', platforms: ['steam'], connected: true },
+  { id: 'street', name: 'CarX Street', category: 'pc', platforms: ['steam', 'ps', 'xbox', 'vk'], reviewTabs: ['steam', 'ps', 'xbox', 'vk'] },
+  { id: 'drift-racing-online-2', name: 'CarX Drift Racing Online 2', category: 'pc', platforms: ['steam'],
+    reviewTabs: ['steam'], firstReview: '2026-05-07', stores: { steam: 'https://store.steampowered.com/app/1826420/' } },
   { id: 'rally-pc', name: 'CarX Rally', category: 'pc', platforms: ['steam'],
     stores: { steam: 'https://store.steampowered.com/app/3883610/CarX_Rally/' },
     reviewStatus: { steam: 'Отзывов в Steam пока нет.' } },
   { id: 'drift-racing-online', name: 'CarX Drift Racing Online', category: 'pc', platforms: ['steam', 'epic', 'xbox', 'ps', 'vk', 'switch'],
+    reviewTabs: ['steam', 'ps', 'xbox', 'vk'], firstReview: '2017-11-17',
+    tabLabels: { ps: 'PS4', xbox: 'One · Series X|S' },
     stores: {
       steam: 'https://store.steampowered.com/app/635260/CarX_Drift_Racing_Online/',
       epic: 'https://store.epicgames.com/p/carx-drift-racing-online-540527',
-      ps: 'https://store.playstation.com/ru-ua/product/EP4910-CUSA15633_00-0000000000000000',
-      xbox: 'https://www.xbox.com/ru-RU/games/store/carx-drift-racing-online/9n6ftc4qjmwn',
+      ps: 'https://store.playstation.com/en-us/concept/10000161',
+      xbox: 'https://www.xbox.com/en-US/games/store/carx-drift-racing-online/9n6ftc4qjmwn',
       vk: 'https://vkplay.ru/play/game/carx-drift-racing-online-11269/',
       switch: 'https://www.nintendo.com/us/store/products/carx-drift-racing-online-switch/',
     } },
@@ -715,12 +723,15 @@ const params = new URLSearchParams(location.search);
 const category = Object.hasOwn(CATEGORIES, params.get('category')) ? params.get('category') : null;
 const projectId = params.get('project') || (!category && location.hash ? 'street' : null);
 const project = PROJECTS.find(item => item.id === projectId);
-const isDrift2 = project?.id === 'drift-racing-online-2';
-const projectData = isDrift2 ? 'projects/drift-racing-online-2/' : '';
-const defaultFirstReview = isDrift2 ? '2026-05-07' : '2024-08-29';
+const requestedPlatform = params.get('platform');
+const selectedPlatform = project?.platforms.includes(requestedPlatform) ? requestedPlatform : project?.platforms[0];
+const TABS = project?.reviewTabs ?? [];
+const showDashboard = TABS.includes(selectedPlatform);
+const projectData = showDashboard && project.id !== 'street' ? `projects/${project.id}/` : '';
+const defaultFirstReview = project?.firstReview ?? '2024-08-29';
 
 function platformUrl(item, platform) {
-  if (item.connected) return `?project=${item.id}${platform === 'steam' ? '' : '#' + platform}`;
+  if (item.reviewTabs?.includes(platform)) return `?project=${item.id}${platform === 'steam' ? '' : '#' + platform}`;
   return `?project=${item.id}&platform=${platform}`;
 }
 
@@ -739,15 +750,14 @@ function platformLinks(item, selected) {
 
 function renderProjectNavigation() {
   const picker = document.getElementById('projectPicker');
-  if (project?.connected) {
+  if (showDashboard) {
     document.querySelector('#reviewDashboard .project-back').textContent = `К проектам · ${CATEGORIES[project.category]}`;
     document.getElementById('reviewDashboard').hidden = false;
     return;
   }
   picker.hidden = false;
   if (project) {
-    const requested = params.get('platform');
-    const platform = project.platforms.includes(requested) ? requested : project.platforms[0];
+    const platform = selectedPlatform;
     const store = project.stores?.[platform];
     const reviewStatus = project.reviewStatus?.[platform] ?? 'Сбор отзывов для этой платформы пока не подключён.';
     document.title = `${project.name} · ${PLATFORMS[platform]} · Отзывы CarX`;
@@ -773,15 +783,27 @@ function renderProjectNavigation() {
 }
 
 renderProjectNavigation();
-if (isDrift2) {
-  document.documentElement.classList.add('drift-racing-online-2');
-  document.title = 'Отзывы CarX Drift Racing Online 2';
+if (projectData) {
+  document.documentElement.classList.add(project.id);
+  document.title = `Отзывы ${project.name}`;
   document.querySelector('.hero .logo').hidden = true;
-  document.querySelector('.hero-project-name').hidden = false;
+  const heading = document.querySelector('.hero-project-name');
+  heading.textContent = project.name;
+  heading.hidden = false;
+  for (const [platform, label] of Object.entries(project.tabLabels ?? {})) {
+    document.querySelector(`[data-tab="${platform}"] .tab-sub`).textContent = label;
+  }
   const links = document.querySelector('.hero .links');
   const steamLink = document.getElementById('storeLink');
-  steamLink.href = 'https://store.steampowered.com/app/1826420/';
+  steamLink.href = project.stores.steam;
   links.replaceChildren(steamLink);
+  for (const platform of TABS.filter(item => item !== 'steam')) {
+    const link = steamLink.cloneNode(false);
+    link.removeAttribute('id');
+    link.href = project.stores[platform];
+    link.textContent = `${PLATFORMS[platform]} ↗`;
+    links.append(' · ', link);
+  }
   document.querySelector('.art-foot').hidden = true;
 }
 
@@ -1512,7 +1534,7 @@ function resetPeriod() {
   applyFilters(currentLang, null);
 }
 
-if (project?.connected) loadData().then(d => {
+if (showDashboard) loadData().then(d => {
   DATA = d;
   renderMeta(d);
   document.getElementById('periodRange').textContent =
@@ -1537,7 +1559,7 @@ if (project?.connected) loadData().then(d => {
   }));
 }).catch(e => {
   document.getElementById('updated').textContent = 'сводка недоступна';
-  if (isDrift2 && e.message === 'data.json: HTTP 404') {
+  if (projectData && e.message === 'data.json: HTTP 404') {
     document.getElementById('app').innerHTML = '<div class="err">Статистика Steam появится после первого успешного сбора отзывов.</div>';
     return;
   }
@@ -1545,14 +1567,13 @@ if (project?.connected) loadData().then(d => {
 });
 
 /* ================== Вкладки: Steam / PlayStation / Xbox / VK Play (v1.8) ================== */
-const TABS = project?.connected ? project.platforms : [];
 let currentTab = 'steam', steamHash = '';
 function tabFromHash() {
   const h = (location.hash || '').replace('#', '');
   if (h === 'ps' || h.startsWith('ps~')) return 'ps';
   if (h === 'xbox' || h.startsWith('xbox~')) return 'xbox';
   if (h === 'vk' || h.startsWith('vk~')) return 'vk';
-  return 'steam';
+  return !h && new URLSearchParams(location.search).has('platform') ? selectedPlatform : 'steam';
 }
 function showTab(tab, fromHash) {
   if (!TABS.includes(tab)) tab = 'steam';
@@ -1570,7 +1591,10 @@ function showTab(tab, fromHash) {
   });
   if (!fromHash) {
     let h = tab === 'steam' ? steamHash : tab === 'ps' ? '#ps' : tab === 'vk' ? '#' + vkHash() : '#' + xbHash();
-    try { history.replaceState(null, '', h && h !== '#' ? h : location.pathname + location.search); } catch (e) { location.hash = h; }
+    const url = new URL(location.href);
+    url.searchParams.delete('platform');
+    url.hash = h;
+    try { history.replaceState(null, '', url); } catch (e) { location.hash = h; }
   }
   if (tab === 'ps') loadPS();
   if (tab === 'xbox') loadXbox();
@@ -1594,10 +1618,27 @@ const STAR = n => '★'.repeat(n) + '☆'.repeat(5 - n);
 const starClass = s => s >= 4 ? 'pos' : s <= 2 ? 'neg' : 'neu';
 const avgTxt = v => v == null || isNaN(v) ? '—' : v.toFixed(2).replace('.', ',');
 async function fetchJson(path) {
-  const r = await fetch(path + '?v=' + Date.now());
+  const r = await fetch(projectData + path + '?v=' + Date.now());
   if (!r.ok) throw new Error(path + ': HTTP ' + r.status);
   return r.json();
 }
+function setStoreError(boxId, message) {
+  const box = document.getElementById(boxId);
+  let status = box.querySelector('.data-error');
+  if (message) {
+    if (!status) {
+      status = document.createElement('p');
+      status.className = 'data-error err';
+      status.setAttribute('role', 'status');
+      box.prepend(status);
+    }
+    status.textContent = message;
+  } else {
+    status?.remove();
+  }
+  box.classList.toggle('data-unavailable', Boolean(message));
+}
+
 function starBars(dist, total) {
   // dist: {5: %, 4: %, ...}
   return [5, 4, 3, 2, 1].map(s => {
@@ -1611,10 +1652,14 @@ function starBars(dist, total) {
 /* ================== PlayStation ================== */
 let PS = null;
 async function loadPS() {
-  const box = document.getElementById('psApp');
   if (PS) return renderPS();
-  try { PS = await fetchJson('consoles/playstation.json'); renderPS(); }
-  catch (e) { box.innerHTML = `<div class="err">Данных PlayStation пока нет: ${esc(e.message)}. Они появятся после ближайшего запуска обновления (GitHub Actions), если PS Store отдаст страницу игры.</div>`; }
+  try {
+    PS = await fetchJson('consoles/playstation.json');
+    setStoreError('psApp', '');
+    renderPS();
+  } catch (e) {
+    setStoreError('psApp', `Данные PlayStation недоступны (${e.message}). Они появятся после успешного обновления.`);
+  }
 }
 function renderPS() {
   const c = PS.current || {}, d = c.dist || {}, hist = (PS.history || []).filter(h => h.count);
@@ -1638,7 +1683,7 @@ function renderPS() {
     simpleChart('psNewChart', 'bar', rows.slice(1), r => r.v, 'Новых оценок', css('--accent'));
     simpleChart('psAvgChart', 'line', rows, r => r.avg, 'Средняя оценка', css('--pos'), { min: 1, max: 5 });
   }
-  document.getElementById('psMeta').innerHTML = `Источник: <a href="${esc(PS.store_url)}" target="_blank" rel="noopener">страница игры в PlayStation Store ↗</a> (PS5, регион US). Обновлено ${esc(new Date(PS.generated_at).toLocaleString('ru-RU', { timeZone: 'Europe/Moscow', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }))} МСК. Оценка в PS Store общая для всех стран и языков. Сборщик консолей v${esc(PS.version || '')}.`;
+  document.getElementById('psMeta').innerHTML = `Источник: <a href="${esc(PS.store_url)}" target="_blank" rel="noopener">страница игры в PlayStation Store ↗</a> (${esc(project?.tabLabels?.ps ?? 'PS5')}, регион US). Обновлено ${esc(new Date(PS.generated_at).toLocaleString('ru-RU', { timeZone: 'Europe/Moscow', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }))} МСК. Оценка в PS Store общая для всех стран и языков. Сборщик консолей v${esc(PS.version || '')}.`;
 }
 function simpleChart(id, type, rows, get, label, color, yr) {
   const grid = css('--grid'), muted = css('--text-muted');
@@ -1673,14 +1718,16 @@ function xbSetFilters(m, p) {
   xbRender();
 }
 async function loadXbox() {
-  const box = document.getElementById('xbApp');
   if (XB) { xbParseHash(); return xbRender(); }
   try {
     XB = await fetchJson('consoles/xbox.json');
+    setStoreError('xbApp', '');
     xbParseHash();
     xbInitControls();
     xbRender();
-  } catch (e) { box.innerHTML = `<div class="err">Данных Xbox пока нет: ${esc(e.message)}. Они появятся после ближайшего запуска обновления (GitHub Actions).</div>`; }
+  } catch (e) {
+    setStoreError('xbApp', `Данные Xbox недоступны (${e.message}). Они появятся после успешного обновления.`);
+  }
 }
 function xbInitControls() {
   ['xbDateFrom', 'xbDateTo'].forEach(id => maskDate(document.getElementById(id)));
@@ -1994,8 +2041,11 @@ async function loadVK() {
   if (VK) { vkParseHash(); return vkRender(); }
   try {
     VK = await fetchJson('vkplay/vkplay.json');
+    setStoreError('vkApp', '');
     vkParseHash(); vkInitControls(); vkRender();
-  } catch (e) { document.getElementById('vkApp').innerHTML = `<div class="err">Данных VK Play пока нет: ${esc(e.message)}. Они появятся после ближайшего запуска обновления (GitHub Actions).</div>`; }
+  } catch (e) {
+    setStoreError('vkApp', `Данные VK Play недоступны (${e.message}). Они появятся после успешного обновления.`);
+  }
 }
 function vkInitControls() {
   ['vkDateFrom', 'vkDateTo'].forEach(id => maskDate(document.getElementById(id)));
@@ -2267,7 +2317,7 @@ function vkInitTopic() {
   document.getElementById('vkTopicMore').addEventListener('click', () => { vkTopicShown += TOPIC_PAGE; vkRenderTopic(false); });
 }
 
-if (project?.connected) initTabs();
+if (showDashboard) initTabs();
 </script>
 </body>
 </html>
