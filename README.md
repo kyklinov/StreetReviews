@@ -4,6 +4,19 @@
 
 Статическая страница на GitHub Pages. Она показывает отзывы и оценки игры CarX Street в [Steam](https://store.steampowered.com/app/1114150/), [PlayStation Store](https://store.playstation.com/en-us/concept/10001917) и [Xbox Store](https://www.xbox.com/en-US/games/store/carx-street/9nn082lmvv2c) и [VK Play](https://vkplay.ru/play/game/carx-street-34754/) и обновляется каждый день через GitHub Actions.
 
+
+### CarX Street Mobile
+
+В разделе **Mobile** доступны вкладки App Store и Google Play. Сборщик
+`scripts/fetch_mobile.py` читает публичные страницы CarX Street на витринах США
+и сохраняет рейтинг, счётчик оценок и распределение звёзд в
+`docs/projects/street-mobile/ios.json` и `android.json`. Ключи издателя не нужны.
+
+GitHub Actions запускает сбор ежедневно в 06:17 МСК. Для каждого магазина
+сохраняется один снимок на дату по московскому времени. Графики появляются
+с двух разных дат. Изменение счётчика показывает разницу между снимками,
+включая возможные снижения.
+
 ## Оформление
 
 - Вверху тёмная плашка с логотипом, датой обновления и ссылками на страницы игры в трёх магазинах (PS и Xbox — регион US). Под ней вкладки Steam / PlayStation / Xbox / VK Play.
