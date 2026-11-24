@@ -233,8 +233,8 @@
     .mk-head, .mk-row { grid-template-columns: minmax(0, 1fr) 46px 52px 44px; } .mk-row .bar-track, .mk-head .h-bar { display: none; }
   }
   .sub-h { font-size: 12px; font-weight: 600; color: var(--text-muted); margin: 0 0 6px; }
-  #psApp, #xbApp, #vkApp { max-width: 1180px; margin: 0 auto; padding: 24px 32px 60px; }
-  @media (max-width: 560px) { #psApp, #xbApp, #vkApp { padding-left: 16px; padding-right: 16px; } }
+  #psApp, #xbApp, #vkApp, #mobileApp { max-width: 1180px; margin: 0 auto; padding: 24px 32px 60px; }
+  @media (max-width: 560px) { #psApp, #xbApp, #vkApp, #mobileApp { padding-left: 16px; padding-right: 16px; } }
   .card .scope { font-size: 11px; color: var(--accent); background: var(--accent-soft); border-radius: 8px; padding: 0 6px; margin-left: 6px; }
 
   /* облако */
@@ -352,6 +352,8 @@
   <button type="button" role="tab" data-tab="ps" aria-selected="false" tabindex="-1">PlayStation<span class="tab-sub">PS5</span></button>
   <button type="button" role="tab" data-tab="xbox" aria-selected="false" tabindex="-1">Xbox<span class="tab-sub">Series X|S</span></button>
   <button type="button" role="tab" data-tab="vk" aria-selected="false" tabindex="-1">VK Play<span class="tab-sub">ПК</span></button>
+  <button type="button" role="tab" data-tab="ios" aria-selected="false" tabindex="-1">App Store<span class="tab-sub">iOS</span></button>
+  <button type="button" role="tab" data-tab="android" aria-selected="false" tabindex="-1">Google Play<span class="tab-sub">Android</span></button>
 </nav></div>
 
 <div class="hero-wrap"><header class="hero">
@@ -482,6 +484,27 @@
     </div>
   </div>
   <p class="meta-note" id="psMeta"></p>
+</main>
+
+<main id="mobileApp" hidden>
+  <div class="cards five" id="mobileCards"></div>
+  <div class="grid-2">
+    <div class="panel">
+      <h2>Динамика оценок <span class="sub">по ежедневным снимкам</span></h2>
+      <p class="note" id="mobileHistoryNote"></p>
+      <div id="mobileCharts" hidden>
+        <h3 class="sub-h">Изменение счётчика оценок</h3>
+        <div class="chart-box" style="height:180px"><canvas id="mobileCountChart" aria-label="Изменение счётчика между снимками"></canvas></div>
+        <h3 class="sub-h" style="margin-top:16px">Средняя оценка</h3>
+        <div class="chart-box" style="height:160px"><canvas id="mobileAvgChart" aria-label="Средняя оценка по снимкам"></canvas></div>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>Распределение оценок</h2>
+      <div id="mobileStars"></div>
+    </div>
+  </div>
+  <p class="meta-note" id="mobileMeta"></p>
 </main>
 
 <main id="xbApp" hidden>
@@ -696,6 +719,7 @@ const PLATFORMS = {
   steam: 'Steam', ps: 'PlayStation', xbox: 'Xbox', vk: 'VK Play', epic: 'Epic Games Store',
   switch: 'Nintendo Switch', ios: 'iOS', android: 'Android', huawei: 'Huawei AppGallery', rustore: 'RuStore',
 };
+const MOBILE_STORES = { ios: 'App Store', android: 'Google Play' };
 const PROJECTS = [
   { id: 'street', name: 'CarX Street', category: 'pc', platforms: ['steam', 'ps', 'xbox', 'vk'], reviewTabs: ['steam', 'ps', 'xbox', 'vk'] },
   { id: 'drift-racing-online-2', name: 'CarX Drift Racing Online 2', category: 'pc', platforms: ['steam'],
@@ -714,7 +738,11 @@ const PROJECTS = [
       vk: 'https://vkplay.ru/play/game/carx-drift-racing-online-11269/',
       switch: 'https://www.nintendo.com/us/store/products/carx-drift-racing-online-switch/',
     } },
-  { id: 'street-mobile', name: 'CarX Street Mobile', category: 'mobile', platforms: ['ios', 'android'] },
+  { id: 'street-mobile', name: 'CarX Street Mobile', category: 'mobile', platforms: ['ios', 'android'],
+    reviewTabs: ['ios', 'android'], stores: {
+      ios: 'https://apps.apple.com/us/app/carx-street/id1458863319',
+      android: 'https://play.google.com/store/apps/details?id=com.carxtech.sr&hl=en&gl=US',
+    } },
   { id: 'drift-racing-3', name: 'CarX Drift Racing 3', category: 'mobile', platforms: ['ios', 'android'] },
   { id: 'drift-racing-2', name: 'CarX Drift Racing 2', category: 'mobile', platforms: ['ios', 'android', 'huawei', 'rustore'] },
   { id: 'rally-mobile', name: 'CarX Rally', category: 'mobile', platforms: ['ios', 'android'] },
@@ -731,7 +759,7 @@ const projectData = showDashboard && project.id !== 'street' ? `projects/${proje
 const defaultFirstReview = project?.firstReview ?? '2024-08-29';
 
 function platformUrl(item, platform) {
-  if (item.reviewTabs?.includes(platform)) return `?project=${item.id}${platform === 'steam' ? '' : '#' + platform}`;
+  if (item.reviewTabs?.includes(platform)) return `?project=${item.id}${platform === item.reviewTabs[0] ? '' : '#' + platform}`;
   return `?project=${item.id}&platform=${platform}`;
 }
 
@@ -751,6 +779,7 @@ function platformLinks(item, selected) {
 function renderProjectNavigation() {
   const picker = document.getElementById('projectPicker');
   if (showDashboard) {
+    document.querySelector('#reviewDashboard .project-back').href = `?category=${project.category}`;
     document.querySelector('#reviewDashboard .project-back').textContent = `К проектам · ${CATEGORIES[project.category]}`;
     document.getElementById('reviewDashboard').hidden = false;
     return;
@@ -795,14 +824,18 @@ if (projectData) {
   }
   const links = document.querySelector('.hero .links');
   const steamLink = document.getElementById('storeLink');
-  steamLink.href = project.stores.steam;
-  links.replaceChildren(steamLink);
+  links.replaceChildren();
+  if (project.stores.steam) {
+    steamLink.href = project.stores.steam;
+    links.append(steamLink);
+  }
   for (const platform of TABS.filter(item => item !== 'steam')) {
     const link = steamLink.cloneNode(false);
     link.removeAttribute('id');
     link.href = project.stores[platform];
-    link.textContent = `${PLATFORMS[platform]} ↗`;
-    links.append(' · ', link);
+    link.textContent = `${MOBILE_STORES[platform] || PLATFORMS[platform]} ↗`;
+    if (links.childNodes.length) links.append(' · ');
+    links.append(link);
   }
   document.querySelector('.art-foot').hidden = true;
 }
@@ -1534,7 +1567,7 @@ function resetPeriod() {
   applyFilters(currentLang, null);
 }
 
-if (showDashboard) loadData().then(d => {
+if (showDashboard && TABS.includes('steam')) loadData().then(d => {
   DATA = d;
   renderMeta(d);
   document.getElementById('periodRange').textContent =
@@ -1570,13 +1603,14 @@ if (showDashboard) loadData().then(d => {
 let currentTab = 'steam', steamHash = '';
 function tabFromHash() {
   const h = (location.hash || '').replace('#', '');
+  if (Object.hasOwn(MOBILE_STORES, h)) return h;
   if (h === 'ps' || h.startsWith('ps~')) return 'ps';
   if (h === 'xbox' || h.startsWith('xbox~')) return 'xbox';
   if (h === 'vk' || h.startsWith('vk~')) return 'vk';
-  return !h && new URLSearchParams(location.search).has('platform') ? selectedPlatform : 'steam';
+  return !h && new URLSearchParams(location.search).has('platform') ? selectedPlatform : TABS[0];
 }
 function showTab(tab, fromHash) {
-  if (!TABS.includes(tab)) tab = 'steam';
+  if (!TABS.includes(tab)) tab = TABS[0];
   if (currentTab === 'steam' && tab !== 'steam' && tabFromHash() === 'steam') steamHash = location.hash;
   currentTab = tab;
   document.getElementById('app').hidden = tab !== 'steam';
@@ -1584,13 +1618,14 @@ function showTab(tab, fromHash) {
   document.getElementById('psApp').hidden = tab !== 'ps';
   document.getElementById('xbApp').hidden = tab !== 'xbox';
   document.getElementById('vkApp').hidden = tab !== 'vk';
+  document.getElementById('mobileApp').hidden = !Object.hasOwn(MOBILE_STORES, tab);
   document.querySelectorAll('.tabs button').forEach(b => {
     b.hidden = !TABS.includes(b.dataset.tab);
     const on = b.dataset.tab === tab;
     b.classList.toggle('on', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); b.tabIndex = on ? 0 : -1;
   });
   if (!fromHash) {
-    let h = tab === 'steam' ? steamHash : tab === 'ps' ? '#ps' : tab === 'vk' ? '#' + vkHash() : '#' + xbHash();
+    let h = tab === 'steam' ? steamHash : tab === 'ps' ? '#ps' : tab === 'vk' ? '#' + vkHash() : tab === 'xbox' ? '#' + xbHash() : '#' + tab;
     const url = new URL(location.href);
     url.searchParams.delete('platform');
     url.hash = h;
@@ -1599,6 +1634,7 @@ function showTab(tab, fromHash) {
   if (tab === 'ps') loadPS();
   if (tab === 'xbox') loadXbox();
   if (tab === 'vk') loadVK();
+  if (Object.hasOwn(MOBILE_STORES, tab)) loadMobile(tab);
   if (tab === 'steam' && charts.weekChart) Object.values(charts).forEach(ch => ch && ch.resize && ch.resize());
 }
 function initTabs() {
@@ -1695,6 +1731,73 @@ function simpleChart(id, type, rows, get, label, color, yr) {
       scales: { x: { grid: { display: false }, ticks: { color: muted, maxRotation: 0, autoSkipPadding: 8, font: { size: 11 } } },
         y: { ...(yr || { beginAtZero: true }), grid: { color: grid }, border: { display: false }, ticks: { color: muted, precision: type === 'bar' ? 0 : 2, font: { size: 11 } } } } }
   });
+}
+
+/* ================== App Store / Google Play ================== */
+const mobileSnapshots = new Map();
+
+async function loadMobile(platform) {
+  const updated = document.getElementById('updated');
+  const name = MOBILE_STORES[platform];
+  updated.textContent = 'загрузка…';
+  setStoreError('mobileApp', 'Загружаю оценки…');
+  try {
+    if (!mobileSnapshots.has(platform)) mobileSnapshots.set(platform, await fetchJson(platform + '.json'));
+    if (currentTab !== platform) return;
+    const snapshot = mobileSnapshots.get(platform);
+    setStoreError('mobileApp', '');
+    renderMobile(snapshot, name);
+    updated.textContent = 'данные на ' + new Date(snapshot.generated_at).toLocaleString('ru-RU', {
+      timeZone: 'Europe/Moscow', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit',
+    }) + ' МСК';
+  } catch (error) {
+    if (currentTab !== platform) return;
+    updated.textContent = 'данные недоступны';
+    setStoreError('mobileApp', `Оценки ${name} появятся после успешного сбора.`);
+  }
+}
+
+function renderMobile({ current, history, source }, name) {
+  const counts = current.stars;
+  const total = counts.reduce((sum, count) => sum + count, 0);
+  const share = count => 100 * count / total;
+  const cards = [
+    card('Рейтинг магазина', `${avgTxt(current.avg)} <span class="mini-sub">из 5</span>`, ruDate(current.date)),
+    card('Всего оценок', fmt(current.count), 'счётчик магазина'),
+  ];
+  const stars = document.getElementById('mobileStars');
+  if (total) {
+    cards.push(
+      card('Положительные (4–5 ★)', pctTxt(share(counts[3] + counts[4])), 'по распределению звёзд', 'var(--pos)'),
+      card('Нейтральные (3 ★)', pctTxt(share(counts[2])), 'по распределению звёзд', 'var(--neu)'),
+      card('Отрицательные (1–2 ★)', pctTxt(share(counts[0] + counts[1])), 'по распределению звёзд', 'var(--neg)'),
+    );
+    stars.innerHTML = [5, 4, 3, 2, 1].map(star => {
+      const n = counts[star - 1], percent = share(n);
+      return `<div class="star-row"><span class="star-label">${star} ★</span>
+        <span class="bar-track"><span class="bar-fill ${starClass(star)}" style="width:${percent}%"></span></span>
+        <span class="star-val">${pctTxt(percent)}</span><span class="star-cnt">${fmt(n)}</span></div>`;
+    }).join('');
+    if (total !== current.count) {
+      stars.insertAdjacentHTML('beforeend', `<p class="note">В разбивке магазина учтено ${fmt(total)} оценок.</p>`);
+    }
+  } else {
+    stars.textContent = 'Магазин не передал распределение для этого снимка.';
+  }
+  document.getElementById('mobileCards').innerHTML = cards.join('');
+  const hasHistory = history.length > 1;
+  document.getElementById('mobileHistoryNote').textContent = hasHistory
+    ? `Снимки с ${ruDate(history[0].date)}. Изменение счётчика — разница между соседними снимками.`
+    : `Первый снимок — ${ruDate(current.date)}. Графики появятся после следующего снимка в другой день.`;
+  document.getElementById('mobileCharts').hidden = !hasHistory;
+  if (hasHistory) {
+    const last = history.slice(-60);
+    const rows = last.map((entry, i) => ({ label: dayLabel(entry.date), avg: entry.avg,
+      delta: i ? entry.count - last[i - 1].count : null }));
+    simpleChart('mobileCountChart', 'bar', rows.slice(1), row => row.delta, 'Изменение счётчика', css('--accent'));
+    simpleChart('mobileAvgChart', 'line', rows, row => row.avg, 'Средняя оценка', css('--pos'), { min: 1, max: 5 });
+  }
+  document.getElementById('mobileMeta').innerHTML = `Источник — <a href="${esc(source)}" target="_blank" rel="noopener">${name} ↗</a>, витрина США.`;
 }
 
 /* ================== Xbox ================== */
