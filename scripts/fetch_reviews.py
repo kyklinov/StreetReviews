@@ -26,13 +26,18 @@ SCRIPT_VERSION = "1.7"
 APP_ID = int(os.environ.get("APP_ID", "1114150"))
 TZ = timezone(timedelta(hours=3))  # Москва — границы дней считаем по МСК
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DRIFT_2_APP_ID = 1826420
-DRIFT_2 = APP_ID == DRIFT_2_APP_ID
-PROJECT_NAME = "CarX Drift Racing Online 2" if DRIFT_2 else "CarX Street"
-RELEASE_TS = 1778112000 if DRIFT_2 else 1722470400  # 7 мая 2026 / 1 августа 2024, UTC
+PROJECTS = {
+    1114150: ("CarX Street", "", (2024, 8, 1)),
+    1826420: ("CarX Drift Racing Online 2", "drift-racing-online-2", (2026, 5, 7)),
+    635260: ("CarX Drift Racing Online", "drift-racing-online", (2017, 11, 17)),
+}
+if APP_ID not in PROJECTS:
+    raise SystemExit(f"Неизвестный Steam APP_ID: {APP_ID}")
+PROJECT_NAME, PROJECT_SLUG, RELEASE_DATE = PROJECTS[APP_ID]
+RELEASE_TS = int(datetime(*RELEASE_DATE, tzinfo=timezone.utc).timestamp())
 OUT_DIR = os.path.join(ROOT, "docs")
-if DRIFT_2:
-    OUT_DIR = os.path.join(OUT_DIR, "projects", "drift-racing-online-2")
+if PROJECT_SLUG:
+    OUT_DIR = os.path.join(OUT_DIR, "projects", PROJECT_SLUG)
 OUT_PATH = os.path.join(OUT_DIR, "data.json")
 TAGS_PATH = os.path.join(ROOT, "scripts", "tags.json")
 GAMES_PATH = os.path.join(ROOT, "scripts", "games.json")
@@ -457,6 +462,8 @@ def main():
 
     total = summary("all")
     log("Сводка:", total)
+    if APP_ID == 635260 and not total["total"]:
+        raise RuntimeError("Steam вернул пустую сводку CarX Drift Racing Online.")
 
     languages = []
     for code in info["languages"]:
@@ -472,7 +479,10 @@ def main():
     reviews = fetch_all_reviews(release_ts)
     log(f"Скачано {len(reviews)} из {total['total']}")
     if total["total"] and len(reviews) < 0.8 * total["total"]:
-        log("ВНИМАНИЕ: скачано меньше 80% отзывов — Steam мог ограничить запросы.")
+        message = "Скачано меньше 80% отзывов — Steam мог ограничить запросы."
+        if APP_ID == 635260:
+            raise RuntimeError(message)
+        log("ВНИМАНИЕ:", message)
 
     reviews.sort(key=lambda r: r["timestamp_created"], reverse=True)
     tags = load_tags()

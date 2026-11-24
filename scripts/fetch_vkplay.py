@@ -34,14 +34,21 @@ from datetime import datetime, timedelta, timezone
 SCRIPT_VERSION = "1.1"
 TZ = timezone(timedelta(hours=3))  # МСК — даты в API VK Play указаны по Москве
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-OUT_PATH = os.path.join(ROOT, "docs", "vkplay", "vkplay.json")
 TAGS_PATH = os.path.join(ROOT, "scripts", "tags.json")
 GAMES_PATH = os.path.join(ROOT, "scripts", "games.json")
 UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0 Safari/537.36"
 PAUSE = float(os.environ.get("VK_PAUSE", "0.7"))
 
-GAME_ID = 34754
-GAME_SLUG = "carx-street-34754"
+PROJECT = os.environ.get("REVIEW_PROJECT", "street")
+GAME_IDS = {"street": 34754, "drift-racing-online": 11269}
+if PROJECT not in GAME_IDS:
+    raise SystemExit(f"Неизвестный REVIEW_PROJECT: {PROJECT}")
+GAME_ID = GAME_IDS[PROJECT]
+GAME_SLUG = f"carx-{PROJECT}-{GAME_ID}"
+DOCS_DIR = os.path.join(ROOT, "docs")
+if PROJECT != "street":
+    DOCS_DIR = os.path.join(DOCS_DIR, "projects", PROJECT)
+OUT_PATH = os.path.join(DOCS_DIR, "vkplay", "vkplay.json")
 STORE_URL = f"https://vkplay.ru/play/game/{GAME_SLUG}/"
 REVIEWS_URL = f"https://vkplay.ru/play/game/{GAME_SLUG}/reviews/"
 API = "https://api.vkplay.ru/play"

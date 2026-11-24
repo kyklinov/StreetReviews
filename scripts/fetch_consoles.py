@@ -30,19 +30,28 @@ from datetime import datetime, timedelta, timezone
 SCRIPT_VERSION = "1.2"
 TZ = timezone(timedelta(hours=3))  # МСК
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-OUT_DIR = os.path.join(ROOT, "docs", "consoles")
 TAGS_PATH = os.path.join(ROOT, "scripts", "tags.json")
 GAMES_PATH = os.path.join(ROOT, "scripts", "games.json")
 UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0 Safari/537.36"
 PAUSE = float(os.environ.get("CONSOLE_PAUSE", "0.6"))
 
-PS_CONCEPT = "10001917"
-PS_URLS = [f"https://store.playstation.com/en-us/concept/{PS_CONCEPT}",
-           f"https://store.playstation.com/en-gb/concept/{PS_CONCEPT}",
-           f"https://store.playstation.com/nl-nl/concept/{PS_CONCEPT}"]
-
-XBOX_ID = "9NN082LMVV2C"
-XBOX_STORE_URL = "https://www.xbox.com/{locale}/games/store/carx-street/9nn082lmvv2c"
+PROJECT = os.environ.get("REVIEW_PROJECT", "street")
+PROJECTS = {
+    "street": ("10001917", "9NN082LMVV2C", "carx-street"),
+    "drift-racing-online": ("10000161", "9N6FTC4QJMWN", "carx-drift-racing-online"),
+}
+if PROJECT not in PROJECTS:
+    raise SystemExit(f"Неизвестный REVIEW_PROJECT: {PROJECT}")
+PS_CONCEPT, XBOX_ID, XBOX_SLUG = PROJECTS[PROJECT]
+DOCS_DIR = os.path.join(ROOT, "docs")
+if PROJECT != "street":
+    DOCS_DIR = os.path.join(DOCS_DIR, "projects", PROJECT)
+OUT_DIR = os.path.join(DOCS_DIR, "consoles")
+PS_URLS = [
+    f"https://store.playstation.com/{locale}/concept/{PS_CONCEPT}"
+    for locale in ("en-us", "en-gb", "nl-nl")
+]
+XBOX_STORE_URL = f"https://www.xbox.com/{{locale}}/games/store/{XBOX_SLUG}/{XBOX_ID.lower()}"
 EDGE = "https://storeedgefd.dsx.mp.microsoft.com/v9.0"
 # Страны магазина Xbox: код → (локаль, название по-русски). Страны без оценок и отзывов на сайт не попадают.
 XBOX_MARKETS = {
@@ -174,7 +183,7 @@ def update_playstation():
     data.update({
         "version": SCRIPT_VERSION,
         "generated_at": datetime.now(TZ).isoformat(timespec="minutes"),
-        "store_url": f"https://store.playstation.com/en-us/concept/{PS_CONCEPT}",
+        "store_url": PS_URLS[0],
         "source": cur["source"],
         "current": entry,
         "history": upsert_history(data.get("history", []), entry),
