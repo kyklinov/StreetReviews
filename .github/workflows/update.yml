@@ -25,6 +25,11 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Сбор оценок CarX Street Mobile — App Store и Google Play
+        continue-on-error: true
+        timeout-minutes: 5
+        run: python scripts/fetch_mobile.py
+
       - name: Сбор отзывов Steam
         id: steam
         continue-on-error: true
@@ -87,6 +92,10 @@ jobs:
           git config user.name  "github-actions[bot]"
           git config user.email "41898333+github-actions[bot]@users.noreply.github.com"
           git add -A docs/data.json docs/reviews docs/consoles docs/vkplay
+          mobile_dir=docs/projects/street-mobile
+          if [ -d "$mobile_dir" ]; then
+            git add -A "$mobile_dir"
+          fi
           if [ "${{ steps.steam_dro2.outcome }}" = "success" ]; then
             git add -A docs/projects/drift-racing-online-2
           fi
