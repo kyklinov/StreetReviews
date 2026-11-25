@@ -354,6 +354,8 @@
   <button type="button" role="tab" data-tab="vk" aria-selected="false" tabindex="-1">VK Play<span class="tab-sub">ПК</span></button>
   <button type="button" role="tab" data-tab="ios" aria-selected="false" tabindex="-1">App Store<span class="tab-sub">iOS</span></button>
   <button type="button" role="tab" data-tab="android" aria-selected="false" tabindex="-1">Google Play<span class="tab-sub">Android</span></button>
+  <button type="button" role="tab" data-tab="huawei" aria-selected="false" tabindex="-1">Huawei AppGallery</button>
+  <button type="button" role="tab" data-tab="rustore" aria-selected="false" tabindex="-1">RuStore</button>
 </nav></div>
 
 <div class="hero-wrap"><header class="hero">
@@ -719,7 +721,12 @@ const PLATFORMS = {
   steam: 'Steam', ps: 'PlayStation', xbox: 'Xbox', vk: 'VK Play', epic: 'Epic Games Store',
   switch: 'Nintendo Switch', ios: 'iOS', android: 'Android', huawei: 'Huawei AppGallery', rustore: 'RuStore',
 };
-const MOBILE_STORES = { ios: 'App Store', android: 'Google Play' };
+const MOBILE_STORES = {
+  ios: { name: 'App Store', storefront: 'США' },
+  android: { name: 'Google Play', storefront: 'США' },
+  huawei: { name: 'Huawei AppGallery' },
+  rustore: { name: 'RuStore', storefront: 'Россия' },
+};
 const PROJECTS = [
   { id: 'street', name: 'CarX Street', category: 'pc', platforms: ['steam', 'ps', 'xbox', 'vk'], reviewTabs: ['steam', 'ps', 'xbox', 'vk'] },
   { id: 'drift-racing-online-2', name: 'CarX Drift Racing Online 2', category: 'pc', platforms: ['steam'],
@@ -743,9 +750,23 @@ const PROJECTS = [
       ios: 'https://apps.apple.com/us/app/carx-street/id1458863319',
       android: 'https://play.google.com/store/apps/details?id=com.carxtech.sr&hl=en&gl=US',
     } },
-  { id: 'drift-racing-3', name: 'CarX Drift Racing 3', category: 'mobile', platforms: ['ios', 'android'] },
-  { id: 'drift-racing-2', name: 'CarX Drift Racing 2', category: 'mobile', platforms: ['ios', 'android', 'huawei', 'rustore'] },
-  { id: 'rally-mobile', name: 'CarX Rally', category: 'mobile', platforms: ['ios', 'android'] },
+  { id: 'drift-racing-3', name: 'CarX Drift Racing 3', category: 'mobile', platforms: ['ios', 'android'],
+    reviewTabs: ['ios', 'android'], stores: {
+      ios: 'https://apps.apple.com/us/app/carx-drift-racing-3/id1569386864',
+      android: 'https://play.google.com/store/apps/details?id=com.carxtech.carxdr3&hl=en&gl=US',
+    } },
+  { id: 'drift-racing-2', name: 'CarX Drift Racing 2', category: 'mobile', platforms: ['ios', 'android', 'huawei', 'rustore'],
+    reviewTabs: ['ios', 'android', 'huawei', 'rustore'], stores: {
+      ios: 'https://apps.apple.com/us/app/carx-drift-racing-2/id1198510863',
+      android: 'https://play.google.com/store/apps/details?id=com.carxtech.carxdr2&hl=en&gl=US',
+      huawei: 'https://appgallery.huawei.com/#/app/C102679135',
+      rustore: 'https://www.rustore.ru/catalog/app/com.carxtech.carxdr2.rustore',
+    } },
+  { id: 'rally-mobile', name: 'CarX Rally', category: 'mobile', platforms: ['ios', 'android'],
+    reviewTabs: ['ios', 'android'], stores: {
+      ios: 'https://apps.apple.com/us/app/carx-rally/id1332286428',
+      android: 'https://play.google.com/store/apps/details?id=com.carxtech.rally&hl=en&gl=US',
+    } },
 ];
 const params = new URLSearchParams(location.search);
 const category = Object.hasOwn(CATEGORIES, params.get('category')) ? params.get('category') : null;
@@ -833,7 +854,7 @@ if (projectData) {
     const link = steamLink.cloneNode(false);
     link.removeAttribute('id');
     link.href = project.stores[platform];
-    link.textContent = `${MOBILE_STORES[platform] || PLATFORMS[platform]} ↗`;
+    link.textContent = `${MOBILE_STORES[platform]?.name || PLATFORMS[platform]} ↗`;
     if (links.childNodes.length) links.append(' · ');
     links.append(link);
   }
@@ -1738,7 +1759,7 @@ const mobileSnapshots = new Map();
 
 async function loadMobile(platform) {
   const updated = document.getElementById('updated');
-  const name = MOBILE_STORES[platform];
+  const store = MOBILE_STORES[platform];
   updated.textContent = 'загрузка…';
   setStoreError('mobileApp', 'Загружаю оценки…');
   try {
@@ -1746,18 +1767,18 @@ async function loadMobile(platform) {
     if (currentTab !== platform) return;
     const snapshot = mobileSnapshots.get(platform);
     setStoreError('mobileApp', '');
-    renderMobile(snapshot, name);
+    renderMobile(snapshot, store);
     updated.textContent = 'данные на ' + new Date(snapshot.generated_at).toLocaleString('ru-RU', {
       timeZone: 'Europe/Moscow', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit',
     }) + ' МСК';
   } catch (error) {
     if (currentTab !== platform) return;
     updated.textContent = 'данные недоступны';
-    setStoreError('mobileApp', `Оценки ${name} появятся после успешного сбора.`);
+    setStoreError('mobileApp', `Оценки ${store.name} появятся после успешного сбора.`);
   }
 }
 
-function renderMobile({ current, history, source }, name) {
+function renderMobile({ current, history, source }, { name, storefront }) {
   const counts = current.stars;
   const total = counts.reduce((sum, count) => sum + count, 0);
   const share = count => 100 * count / total;
@@ -1797,7 +1818,7 @@ function renderMobile({ current, history, source }, name) {
     simpleChart('mobileCountChart', 'bar', rows.slice(1), row => row.delta, 'Изменение счётчика', css('--accent'));
     simpleChart('mobileAvgChart', 'line', rows, row => row.avg, 'Средняя оценка', css('--pos'), { min: 1, max: 5 });
   }
-  document.getElementById('mobileMeta').innerHTML = `Источник — <a href="${esc(source)}" target="_blank" rel="noopener">${name} ↗</a>, витрина США.`;
+  document.getElementById('mobileMeta').innerHTML = `Источник — <a href="${esc(source)}" target="_blank" rel="noopener">${name} ↗</a>${storefront ? `, витрина ${storefront}` : ''}.`;
 }
 
 /* ================== Xbox ================== */
