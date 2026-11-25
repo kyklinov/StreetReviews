@@ -3,8 +3,17 @@ name: Обновление отзывов Steam
 
 on:
   schedule:
-    - cron: "17 3 * * *"   # каждый день в 03:17 UTC (06:17 МСК)
-  workflow_dispatch:        # ручной запуск из вкладки Actions
+    - cron: "17 3 2-31 * *" # ежедневное обновление в 06:17 МСК
+    - cron: "17 3 1 * *"    # полная сверка Steam первого числа
+  workflow_dispatch:
+    inputs:
+      steam_mode:
+        description: Режим сбора отзывов Steam
+        type: choice
+        default: recent
+        options:
+          - recent
+          - full
 
 permissions:
   contents: write
@@ -18,12 +27,23 @@ jobs:
   update:
     runs-on: ubuntu-latest
     timeout-minutes: 270
+    env:
+      STEAM_CACHE_KEY: steam-reviews-v1-${{ github.run_id }}-${{ github.run_attempt }}
+      STEAM_REVIEW_MODE: ${{ (github.event.schedule == '17 3 1 * *' || inputs.steam_mode == 'full') && 'full' || 'recent' }}
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+
+      - name: Восстановление архива Steam
+        uses: actions/cache/restore@v4
+        continue-on-error: true
+        with:
+          path: .steam-review-cache
+          key: ${{ env.STEAM_CACHE_KEY }}
+          restore-keys: steam-reviews-v1-
 
       - name: Сбор оценок мобильных игр — App Store, Google Play и RuStore
         continue-on-error: true
@@ -99,7 +119,10 @@ jobs:
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "41898333+github-actions[bot]@users.noreply.github.com"
-          git add -A docs/data.json docs/reviews docs/consoles docs/vkplay
+          git add -A docs/consoles docs/vkplay
+          if [ "${{ steps.steam.outcome }}" = "success" ]; then
+            git add -A docs/data.json docs/reviews
+          fi
           for project in street-mobile drift-racing-3 drift-racing-2 rally-mobile; do
             mobile_dir="docs/projects/$project"
             if [ -d "$mobile_dir" ]; then
@@ -125,6 +148,14 @@ jobs:
             git push
             echo "pushed=true" >> "$GITHUB_OUTPUT"
           fi
+
+      - name: Сохранение архива Steam
+        if: steps.commit_data.outcome == 'success' && (steps.steam.outcome == 'success' || steps.steam_dro.outcome == 'success' || steps.steam_dro2.outcome == 'success')
+        uses: actions/cache/save@v4
+        continue-on-error: true
+        with:
+          path: .steam-review-cache
+          key: ${{ env.STEAM_CACHE_KEY }}
 
       - name: Запрос публикации GitHub Pages
         if: github.ref == 'refs/heads/main' && steps.commit_data.outputs.pushed == 'true'
