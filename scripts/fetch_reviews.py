@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 """
-CarX Street — сборщик отзывов Steam для дэшборда.
-Версия: 1.7 (2026-10-08) — в data.json добавлены паттерны тем (tags_meta) для подсветки на странице
+CarX — сборщик отзывов Steam для дэшборда.
 
 Что делает:
   1. Берёт сводку по отзывам (все типы покупок, все языки) и отдельно по каждому языку,
      на который локализована страница игры в Steam.
-  2. Выкачивает все отзывы (окнами по месяцу — так Steam отдаёт полный список без обрывов).
+  2. Загружает отзывы окнами по месяцу. В режиме recent дополняет свежую выгрузку кэшем.
   3. Считает метрики и пишет docs/data.json, который читает docs/index.html.
 
 Зависимости: только стандартная библиотека Python 3.9+.
 Запуск: python scripts/fetch_reviews.py
 """
+import gzip
 import json
 import os
 import re
@@ -19,10 +19,12 @@ import sys
 import time
 import urllib.parse
 import urllib.request
+import zlib
+from calendar import monthrange
 from collections import Counter, defaultdict
 from datetime import datetime, timedelta, timezone
 
-SCRIPT_VERSION = "1.7"
+SCRIPT_VERSION = "1.8"
 APP_ID = int(os.environ.get("APP_ID", "1114150"))
 TZ = timezone(timedelta(hours=3))  # Москва — границы дней считаем по МСК
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -151,40 +153,108 @@ def app_details():
     }
 
 
+CACHE_DIR = os.path.join(ROOT, ".steam-review-cache")
+CACHE_FIELDS = (
+    "recommendationid", "timestamp_created", "voted_up", "language", "review",
+    "received_for_free", "votes_up", "votes_funny", "written_during_early_access",
+)
+AUTHOR_FIELDS = ("steamid", "personaname", "playtime_at_review")
+
+
 def month_windows(start_ts, end_ts):
-    """Календарные месяцы (UTC) от start до end включительно."""
-    d = datetime.fromtimestamp(start_ts, timezone.utc).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-    end = datetime.fromtimestamp(end_ts, timezone.utc)
-    while d <= end:
-        nxt = (d.replace(day=28) + timedelta(days=4)).replace(day=1)
-        yield int(d.timestamp()), int(nxt.timestamp()) - 1
-        d = nxt
+    """Непересекающиеся месячные окна UTC с точными границами первого и последнего."""
+    month = datetime.fromtimestamp(start_ts, timezone.utc).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    while month.timestamp() <= end_ts and start_ts <= end_ts:
+        following = (month.replace(day=28) + timedelta(days=4)).replace(day=1)
+        yield max(start_ts, int(month.timestamp())), min(end_ts, int(following.timestamp()) - 1)
+        month = following
 
 
-def fetch_all_reviews(release_ts):
-    """Выкачивает все отзывы. Steam обрывает длинную пагинацию, поэтому идём окнами по месяцу."""
-    seen = {}
-    now_ts = int(time.time())
-    for start, end in month_windows(release_ts, now_ts):
-        cursor, got, pages = "*", 0, 0
-        while True:
-            j = get_reviews_page(
-                num_per_page=100,
-                cursor=cursor,
-                date_range_start=start,
-                date_range_end=end,
+def fetch_reviews(start_ts, end_ts):
+    reviews = {}
+    for start, end in month_windows(start_ts, end_ts):
+        label = datetime.fromtimestamp(start, timezone.utc).date()
+        cursor, expected, window = "*", None, {}
+        for _ in range(301):
+            response = get_reviews_page(
+                num_per_page=100, cursor=cursor, date_range_start=start, date_range_end=end,
             )
-            batch = j.get("reviews") or []
-            pages += 1
-            for r in batch:
-                seen[r["recommendationid"]] = r
-            got += len(batch)
-            new_cursor = j.get("cursor")
-            if not batch or not new_cursor or new_cursor == cursor or pages > 300:
+            if expected is None:
+                expected = response.get("total_matching", response.get("query_summary", {}).get("total_reviews"))
+                if not isinstance(expected, int) or expected < 0:
+                    raise RuntimeError(f"Steam {label}: не получен счётчик отзывов за период.")
+            batch = response.get("reviews") or []
+            for review in batch:
+                if not start <= review["timestamp_created"] <= end:
+                    raise RuntimeError(f"Steam {label}: отзыв вне запрошенного периода.")
+                window[review["recommendationid"]] = review
+            new_cursor = response.get("cursor")
+            if len(window) >= expected or not batch or not new_cursor or cursor == new_cursor:
                 break
             cursor = new_cursor
-        log(f"  {datetime.fromtimestamp(start, timezone.utc):%Y-%m}: {got} отзывов")
-    return list(seen.values())
+        if len(window) != expected:
+            raise RuntimeError(f"Steam {label}: выгрузка неполная или изменилась в процессе ({len(window)} из {expected}).")
+        reviews.update(window)
+        log(f"  {label}: {len(window)} отзывов")
+    return reviews
+
+
+def read_cache(path, now_ts):
+    try:
+        with gzip.open(path, "rt", encoding="utf-8") as fp:
+            archive = json.load(fp)
+        through = archive["through"]
+        rows = archive["reviews"]
+        if archive["app_id"] != APP_ID or not isinstance(through, int) or not 0 < through <= now_ts or not rows:
+            raise ValueError("несовместимый архив")
+        reviews = {}
+        for row in rows:
+            if not 0 < row["timestamp_created"] <= through:
+                raise ValueError("некорректная дата отзыва в архиве")
+            reviews[row["recommendationid"]] = row
+        if len(reviews) != len(rows):
+            raise ValueError("повторяющиеся ID отзывов в архиве")
+        return through, reviews
+    except (OSError, EOFError, ValueError, KeyError, TypeError, zlib.error) as error:
+        log(f"Архив недоступен ({error}); нужен полный сбор.")
+        return None
+
+
+def write_cache(path, reviews, through):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    rows = []
+    for review in reviews:
+        row = {key: review[key] for key in CACHE_FIELDS if key in review}
+        author = review.get("author") or {}
+        row["author"] = {key: author[key] for key in AUTHOR_FIELDS if key in author}
+        rows.append(row)
+    temporary = path + ".tmp"
+    with gzip.open(temporary, "wt", encoding="utf-8", compresslevel=3) as fp:
+        json.dump({"app_id": APP_ID, "through": through, "reviews": rows}, fp, ensure_ascii=False, separators=(",", ":"))
+    os.replace(temporary, path)
+
+
+def update_reviews(cache_path, mode, now_ts):
+    # Сохраняем границу старого сборщика — первый день месяца перед релизом.
+    release = datetime.fromtimestamp(RELEASE_TS - 31 * 86400, timezone.utc)
+    release_ts = int(release.replace(day=1, hour=0, minute=0, second=0, microsecond=0).timestamp())
+    archive = read_cache(cache_path, now_ts) if mode == "recent" else None
+    if archive is None:
+        log("Steam: полный сбор.")
+        return list(fetch_reviews(release_ts, now_ts).values())
+
+    through, previous = archive
+    now = datetime.fromtimestamp(now_ts, timezone.utc)
+    year, month = divmod(now.year * 12 + now.month - 1 - 6, 12)
+    month += 1
+    cutoff = now.replace(year=year, month=month, day=min(now.day, monthrange(year, month)[1]),
+                         hour=0, minute=0, second=0, microsecond=0)
+    start = max(release_ts, min(int(cutoff.timestamp()), through + 1))
+    recent = fetch_reviews(start, now_ts)
+    preserved = {rid: review for rid, review in previous.items() if review["timestamp_created"] < start}
+    log(f"Steam: из архива {len(preserved)}, из Steam {len(recent)} с {datetime.fromtimestamp(start, timezone.utc):%Y-%m-%d}.")
+    preserved.update(recent)
+    return list(preserved.values())
 
 
 BBCODE = re.compile(r"\[/?[a-z0-9*]+(?:=[^\]]*)?\]", re.I)
@@ -462,8 +532,8 @@ def main():
 
     total = summary("all")
     log("Сводка:", total)
-    if APP_ID == 635260 and not total["total"]:
-        raise RuntimeError("Steam вернул пустую сводку CarX Drift Racing Online.")
+    if not total["total"]:
+        raise RuntimeError(f"Steam вернул пустую сводку для {PROJECT_NAME}.")
 
     languages = []
     for code in info["languages"]:
@@ -472,17 +542,15 @@ def main():
         languages.append(s)
     languages.sort(key=lambda x: -x["total"])
 
-    release_ts = RELEASE_TS
-    release_ts -= 31 * 86400  # запас на случай предзаказов / раннего доступа
-
-    log("Скачиваю отзывы…")
-    reviews = fetch_all_reviews(release_ts)
-    log(f"Скачано {len(reviews)} из {total['total']}")
-    if total["total"] and len(reviews) < 0.8 * total["total"]:
-        message = "Скачано меньше 80% отзывов — Steam мог ограничить запросы."
-        if APP_ID == 635260:
-            raise RuntimeError(message)
-        log("ВНИМАНИЕ:", message)
+    cache_path = os.path.join(CACHE_DIR, f"{APP_ID}.json.gz")
+    mode = os.environ.get("STEAM_REVIEW_MODE", "full")
+    if mode not in ("full", "recent"):
+        raise ValueError(f"Неизвестный режим Steam: {mode}")
+    now_ts = int(time.time())
+    reviews = update_reviews(cache_path, mode, now_ts)
+    log(f"В архиве {len(reviews)} отзывов, в сводке Steam {total['total']}.")
+    if len(reviews) < 0.8 * total["total"]:
+        raise RuntimeError("В архиве меньше 80% отзывов из сводки Steam.")
 
     reviews.sort(key=lambda r: r["timestamp_created"], reverse=True)
     tags = load_tags()
@@ -552,6 +620,7 @@ def main():
     os.makedirs(os.path.dirname(OUT_PATH), exist_ok=True)
     with open(OUT_PATH, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, separators=(",", ":"))
+    write_cache(cache_path, reviews, now_ts)
     log(f"Готово: {OUT_PATH} ({round(time.time() - t0)} c)")
 
 
