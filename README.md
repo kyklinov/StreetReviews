@@ -5,17 +5,19 @@
 Статическая страница на GitHub Pages. Она показывает отзывы и оценки игры CarX Street в [Steam](https://store.steampowered.com/app/1114150/), [PlayStation Store](https://store.playstation.com/en-us/concept/10001917) и [Xbox Store](https://www.xbox.com/en-US/games/store/carx-street/9nn082lmvv2c) и [VK Play](https://vkplay.ru/play/game/carx-street-34754/) и обновляется каждый день через GitHub Actions.
 
 
-### CarX Street Mobile
+### Мобильные игры
 
-В разделе **Mobile** доступны вкладки App Store и Google Play. Сборщик
-`scripts/fetch_mobile.py` читает публичные страницы CarX Street на витринах США
-и сохраняет рейтинг, счётчик оценок и распределение звёзд в
-`docs/projects/street-mobile/ios.json` и `android.json`. Ключи издателя не нужны.
+В разделе **Mobile** собраны CarX Street Mobile, CarX Drift Racing 3,
+CarX Drift Racing 2 и CarX Rally. Сборщик `scripts/fetch_mobile.py` берёт
+оценки с публичных страниц App Store и Google Play на витринах США.
+Для CarX Drift Racing 2 также подключены RuStore и Huawei AppGallery.
+AppGallery показывает данные после загрузки страницы в Chromium, для него
+в GitHub Actions есть отдельный шаг. Ключи издателя не нужны.
 
-GitHub Actions запускает сбор ежедневно в 06:17 МСК. Для каждого магазина
+Результаты сохраняются в `docs/projects/<проект>/`. Для каждого магазина
 сохраняется один снимок на дату по московскому времени. Графики появляются
 с двух разных дат. Изменение счётчика показывает разницу между снимками,
-включая возможные снижения.
+включая возможные снижения. Разбивка звёзд показывается там, где её отдаёт витрина.
 
 ## Оформление
 
