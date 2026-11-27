@@ -24,7 +24,7 @@ from calendar import monthrange
 from collections import Counter, defaultdict
 from datetime import datetime, timedelta, timezone
 
-SCRIPT_VERSION = "1.8"
+SCRIPT_VERSION = "1.8.1"
 APP_ID = int(os.environ.get("APP_ID", "1114150"))
 TZ = timezone(timedelta(hours=3))  # Москва — границы дней считаем по МСК
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -170,32 +170,60 @@ def month_windows(start_ts, end_ts):
         month = following
 
 
+def fetch_review_window(start, end, splits_left=2):
+    label = datetime.fromtimestamp(start, timezone.utc).date()
+    cursor, expected, window = "*", None, {}
+    seen_cursors = {cursor}
+    exhausted = False
+    for _ in range(301):
+        response = get_reviews_page(
+            num_per_page=100, cursor=cursor, date_range_start=start, date_range_end=end,
+        )
+        if expected is None:
+            expected = response.get("total_matching", response.get("query_summary", {}).get("total_reviews"))
+            if not isinstance(expected, int) or expected < 0:
+                raise RuntimeError(f"Steam {label}: не получен счётчик отзывов за период.")
+        batch = response.get("reviews") or []
+        for review in batch:
+            if not start <= review["timestamp_created"] <= end:
+                raise RuntimeError(f"Steam {label}: отзыв вне запрошенного периода.")
+            window[review["recommendationid"]] = review
+        new_cursor = response.get("cursor")
+        if not batch or not new_cursor or cursor == new_cursor:
+            exhausted = True
+            break
+        if new_cursor in seen_cursors:
+            break
+        seen_cursors.add(new_cursor)
+        cursor = new_cursor
+
+    count = len(window)
+    # У счётчика и страниц Steam разные снимки. Для завершённой пагинации допускаем
+    # 1 отзыв от 50 записей и до 5 в больших выборках (не больше примерно 2%).
+    tolerance = min(5, max(count, expected) // 50)
+    if exhausted and count == expected:
+        return window
+    if exhausted and count and abs(count - expected) <= tolerance:
+        log(f"  Steam {label}: пагинация завершена, получено {count}, счётчик {expected}.")
+        return window
+    if splits_left and start < end:
+        log(f"  Steam {label}: получено {count} из {expected}, перепроверяю период двумя запросами с меньшими окнами.")
+        midpoint = (start + end) // 2
+        first = fetch_review_window(start, midpoint, splits_left - 1)
+        first.update(fetch_review_window(midpoint + 1, end, splits_left - 1))
+        if len(first) >= max(count, expected - tolerance):
+            return first
+        log(f"  Steam {label}: после перепроверки получено {len(first)} из {expected}.")
+        count = len(first)
+    raise RuntimeError(f"Steam {label}: не удалось сверить выгрузку ({count} из {expected}).")
+
+
 def fetch_reviews(start_ts, end_ts):
     reviews = {}
     for start, end in month_windows(start_ts, end_ts):
-        label = datetime.fromtimestamp(start, timezone.utc).date()
-        cursor, expected, window = "*", None, {}
-        for _ in range(301):
-            response = get_reviews_page(
-                num_per_page=100, cursor=cursor, date_range_start=start, date_range_end=end,
-            )
-            if expected is None:
-                expected = response.get("total_matching", response.get("query_summary", {}).get("total_reviews"))
-                if not isinstance(expected, int) or expected < 0:
-                    raise RuntimeError(f"Steam {label}: не получен счётчик отзывов за период.")
-            batch = response.get("reviews") or []
-            for review in batch:
-                if not start <= review["timestamp_created"] <= end:
-                    raise RuntimeError(f"Steam {label}: отзыв вне запрошенного периода.")
-                window[review["recommendationid"]] = review
-            new_cursor = response.get("cursor")
-            if len(window) >= expected or not batch or not new_cursor or cursor == new_cursor:
-                break
-            cursor = new_cursor
-        if len(window) != expected:
-            raise RuntimeError(f"Steam {label}: выгрузка неполная или изменилась в процессе ({len(window)} из {expected}).")
+        window = fetch_review_window(start, end)
         reviews.update(window)
-        log(f"  {label}: {len(window)} отзывов")
+        log(f"  {datetime.fromtimestamp(start, timezone.utc):%Y-%m-%d}: {len(window)} отзывов")
     return reviews
 
 
